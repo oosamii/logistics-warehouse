@@ -20,13 +20,13 @@ const Packing = () => {
         <Download size={16} />
         Export
       </button>
-      <button
+      {/* <button
         onClick={() => setShowStartPackingModal(true)}
         className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
       >
         <Plus size={16} />
         Start Packing
-      </button>
+      </button> */}
     </>
   );
 

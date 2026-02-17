@@ -3,9 +3,11 @@ import React, { useState, useEffect } from "react";
 import FilterBar from "../components/FilterBar";
 import CusTable from "../components/CusTable";
 import http from "../../api/http";
-import { Loader } from "lucide-react"; // Add a loading spinner icon
+import { Loader } from "lucide-react";
+import { useToast } from "../components/toast/ToastProvider";
 
 const PackingReady = ({ onOrderSelect }) => {
+  const toast = useToast();
   const [filters, setFilters] = useState({
     date: "Today",
     warehouse: "",
@@ -14,7 +16,6 @@ const PackingReady = ({ onOrderSelect }) => {
     priority: "All",
     search: "",
   });
-  
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -22,26 +23,39 @@ const PackingReady = ({ onOrderSelect }) => {
     total: 0,
     page: 1,
     pages: 1,
-    limit: 10
+    limit: 10,
   });
 
-  // Fetch orders from API
+  const startPacking = async (id) => {
+    try {
+      const res = await http.post(`/packing/${id}/start`);
+      toast.success(res?.data?.message);
+      fetchOrders(1);
+    } catch (e) {
+      console.log(e?.response);
+      toast.error(e?.response?.data?.message);
+    }
+  };
+
   const fetchOrders = async (page = 1) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await http.get('/sales-orders/', {
+      const response = await http.get("/sales-orders/", {
         params: {
-          status: 'PICKED',
+          status: "PICKED",
           page: page,
           limit: pagination.limit,
-          // Add filter params if needed
           ...(filters.search && { search: filters.search }),
-          ...(filters.priority !== 'All' && { priority: filters.priority.toUpperCase() }),
-          ...(filters.client && filters.client !== 'All' && { client_id: filters.client }),
-          ...(filters.warehouse && filters.warehouse !== 'All' && { warehouse_id: filters.warehouse })
-        }
+          ...(filters.priority !== "All" && {
+            priority: filters.priority.toUpperCase(),
+          }),
+          ...(filters.client &&
+            filters.client !== "All" && { client_id: filters.client }),
+          ...(filters.warehouse &&
+            filters.warehouse !== "All" && { warehouse_id: filters.warehouse }),
+        },
       });
 
       if (response.data) {
@@ -50,7 +64,7 @@ const PackingReady = ({ onOrderSelect }) => {
           total: response.data.total || 0,
           page: response.data.page || 1,
           pages: response.data.pages || 1,
-          limit: pagination.limit
+          limit: pagination.limit,
         });
       }
     } catch (err) {
@@ -61,25 +75,24 @@ const PackingReady = ({ onOrderSelect }) => {
     }
   };
 
-  // Initial fetch and when filters change
   useEffect(() => {
     fetchOrders(1);
-  }, [filters.priority, filters.search]); // Add other filter dependencies as needed
+  }, [filters.priority, filters.search]);
 
-  // Transform API data to match table structure
   const transformOrderData = (orders) => {
-    return orders.map(order => {
-      // Calculate SLA due status
+    return orders.map((order) => {
       const getSlaDueText = () => {
         if (!order.sla_due_date) return "No SLA";
-        
+
         const dueDate = new Date(order.sla_due_date);
         const now = new Date();
         const diffHours = Math.floor((dueDate - now) / (1000 * 60 * 60));
-        
+
         if (diffHours < 0) return `Overdue (${Math.abs(diffHours)}h)`;
-        if (diffHours < 24) return `Today ${dueDate.getHours()}:${String(dueDate.getMinutes()).padStart(2, '0')}`;
-        if (diffHours < 48) return `Tomorrow ${dueDate.getHours()}:${String(dueDate.getMinutes()).padStart(2, '0')}`;
+        if (diffHours < 24)
+          return `Today ${dueDate.getHours()}:${String(dueDate.getMinutes()).padStart(2, "0")}`;
+        if (diffHours < 48)
+          return `Tomorrow ${dueDate.getHours()}:${String(dueDate.getMinutes()).padStart(2, "0")}`;
         return dueDate.toLocaleDateString();
       };
 
@@ -93,12 +106,11 @@ const PackingReady = ({ onOrderSelect }) => {
         priority: order.priority || "NORMAL",
         status: order.status || "PICKED",
         slaDue: getSlaDueText(),
-        originalOrder: order // Keep original data if needed
+        originalOrder: order,
       };
     });
   };
 
-  // FilterBar configuration
   const filterConfig = [
     {
       key: "date",
@@ -113,7 +125,7 @@ const PackingReady = ({ onOrderSelect }) => {
       type: "select",
       label: "Warehouse",
       value: filters.warehouse,
-      options: ["All", "WH001", "WH002", "WH003"], // You might want to fetch these from API
+      options: ["All", "WH001", "WH002", "WH003"],
       className: "w-[140px]",
     },
     {
@@ -121,7 +133,7 @@ const PackingReady = ({ onOrderSelect }) => {
       type: "select",
       label: "Client",
       value: filters.client,
-      options: ["All", "1", "2", "3"], // You might want to fetch these from API
+      options: ["All", "1", "2", "3"],
       className: "w-[140px]",
     },
     {
@@ -150,101 +162,106 @@ const PackingReady = ({ onOrderSelect }) => {
     },
   ];
 
- // packing/PackingReady.jsx - Updated columns section
+  const columns = [
+    {
+      key: "orderNo",
+      title: "Order No",
+      render: (r) => (
+        <button
+          onClick={() => onOrderSelect?.(r.orderNo)}
+          className="font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left"
+        >
+          {r.orderNo}
+        </button>
+      ),
+    },
+    {
+      key: "client",
+      title: "Client",
+      render: (r) => r.client || "-",
+    },
+    {
+      key: "shipTo",
+      title: "Ship-to",
+      render: (r) => r.shipTo || "-",
+    },
+    {
+      key: "lines",
+      title: "Lines",
+      render: (r) => r.lines || 0,
+    },
+    {
+      key: "unitsPicked",
+      title: "Units Picked",
+      render: (r) => r.unitsPicked || 0,
+    },
+    {
+      key: "priority",
+      title: "Priority",
+      render: (r) => (
+        <span
+          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+            r.priority === "HIGH"
+              ? "bg-orange-100 text-orange-700"
+              : r.priority === "NORMAL"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700"
+          }`}
+        >
+          {r.priority}
+        </span>
+      ),
+    },
+    {
+      key: "status",
+      title: "Status",
+      render: (r) => (
+        <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold bg-green-100 text-green-700">
+          {r.status}
+        </span>
+      ),
+    },
+    {
+      key: "slaDue",
+      title: "SLA Due",
+      render: (r) => (
+        <span
+          className={`font-medium ${
+            r.slaDue.includes("Overdue")
+              ? "text-red-600"
+              : r.slaDue.includes("Today")
+                ? "text-orange-600"
+                : "text-gray-600"
+          }`}
+        >
+          {r.slaDue}
+        </span>
+      ),
+    },
+    {
+      key: "actions",
+      title: "Actions",
+      render: (r) => (
+        <>
+          {/* <button
+            onClick={() => onOrderSelect?.(r.orderNo)}
+            className="text-blue-600 text-sm font-medium hover:text-blue-800"
+          >
+            Pack Now
+          </button> */}
+          <button
+            className="text-blue-600 text-sm font-medium hover:text-blue-800"
+            onClick={() => startPacking(r?.id)}
+          >
+            Start Packing
+          </button>
+        </>
+      ),
+    },
+  ];
 
-const columns = [
-  {
-    key: "orderNo",
-    title: "Order No",
-    render: (r) => (
-      <button
-        onClick={() => onOrderSelect?.(r.orderNo)}
-        className="font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left"
-      >
-        {r.orderNo}
-      </button>
-    ),
-  },
-  { 
-    key: "client", 
-    title: "Client",
-    render: (r) => r.client || "-"
-  },
-  { 
-    key: "shipTo", 
-    title: "Ship-to",
-    render: (r) => r.shipTo || "-"
-  },
-  { 
-    key: "lines", 
-    title: "Lines",
-    render: (r) => r.lines || 0
-  },
-  { 
-    key: "unitsPicked", 
-    title: "Units Picked",
-    render: (r) => r.unitsPicked || 0
-  },
-  {
-    key: "priority",
-    title: "Priority",
-    render: (r) => (
-      <span
-        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-          r.priority === "HIGH"
-            ? "bg-orange-100 text-orange-700"
-            : r.priority === "NORMAL"
-            ? "bg-blue-100 text-blue-700"
-            : "bg-gray-100 text-gray-700"
-        }`}
-      >
-        {r.priority}
-      </span>
-    ),
-  },
-  {
-    key: "status",
-    title: "Status",
-    render: (r) => (
-      <span className="inline-flex rounded-full px-3 py-1 text-xs font-semibold bg-green-100 text-green-700">
-        {r.status}
-      </span>
-    ),
-  },
-  {
-    key: "slaDue",
-    title: "SLA Due",
-    render: (r) => (
-      <span
-        className={`font-medium ${
-          r.slaDue.includes("Overdue")
-            ? "text-red-600"
-            : r.slaDue.includes("Today")
-              ? "text-orange-600"
-              : "text-gray-600"
-        }`}
-      >
-        {r.slaDue}
-      </span>
-    ),
-  },
-  {
-    key: "actions",
-    title: "Actions",
-    render: (r) => (
-      <button
-        onClick={() => onOrderSelect?.(r.orderNo)}
-        className="text-blue-600 text-sm font-medium hover:text-blue-800"
-      >
-        Pack Now
-      </button>
-    ),
-  },
-];
-
-  // Handle filter changes
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleApplyFilters = () => {
@@ -260,11 +277,9 @@ const columns = [
       priority: "All",
       search: "",
     });
-    // Fetch after reset
     setTimeout(() => fetchOrders(1), 0);
   };
 
-  // Handle page change
   const handlePageChange = (newPage) => {
     if (newPage >= 1 && newPage <= pagination.pages) {
       fetchOrders(newPage);
@@ -309,16 +324,14 @@ const columns = [
       />
 
       <div className="rounded-lg border border-gray-200 bg-white">
-        <CusTable 
-          columns={columns} 
-          data={transformedData} 
-        />
-        
-        {/* Pagination */}
+        <CusTable columns={columns} data={transformedData} />
+
         {pagination.pages > 1 && (
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
             <div className="text-sm text-gray-700">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} orders
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+              of {pagination.total} orders
             </div>
             <div className="flex items-center gap-2">
               <button

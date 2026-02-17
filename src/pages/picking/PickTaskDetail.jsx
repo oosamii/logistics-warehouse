@@ -432,6 +432,21 @@ const PickTaskDetail = () => {
               >
                 Assign To
               </button>
+              <div className="w-full lg:w-60">
+                <PaginatedEntityDropdown
+                  endpoint="/users"
+                  listKey="users"
+                  value={selectedUser}
+                  onChange={(val) => setSelectedUser(val)}
+                  placeholder="Assign to user"
+                  enableSearch
+                  searchParam="search"
+                  renderItem={(u) => ({
+                    title: u.first_name + u.last_name || u.username,
+                    subtitle: u.email,
+                  })}
+                />
+              </div>
             </>
           )}
 
@@ -531,74 +546,76 @@ const PickTaskDetail = () => {
                   No steps available for this wave.
                 </div>
               ) : (
-                <div className="overflow-hidden rounded-lg border border-gray-200">
-                  {/* Header */}
-                  <div className="grid grid-cols-6 bg-gray-100 px-4 py-3 text-xs font-semibold text-gray-600">
-                    <div>#</div>
-                    <div>Bin</div>
-                    <div>SKU</div>
-                    <div>Req</div>
-                    <div>Picked</div>
-                    <div>Status</div>
-                  </div>
+                <div className="overflow-x-auto rounded-lg border border-gray-200">
+                  <div className="min-w-[900px]">
+                    {/* Header */}
+                    <div className="grid grid-cols-6 bg-gray-100 px-4 py-3 text-xs font-semibold text-gray-600">
+                      <div>#</div>
+                      <div>Bin</div>
+                      <div>SKU</div>
+                      <div>Req</div>
+                      <div>Picked</div>
+                      <div>Status</div>
+                    </div>
 
-                  {/* Rows */}
-                  {steps.map((step) => {
-                    const isCurrent = step.state === "current";
-                    const isDone = step.state === "done";
+                    {/* Rows */}
+                    {steps.map((step) => {
+                      const isCurrent = step.state === "current";
+                      const isDone = step.state === "done";
 
-                    return (
-                      <div
-                        key={step.idx}
-                        className={`grid grid-cols-6 items-center px-4 py-4 border-t text-sm ${
-                          isCurrent
-                            ? "bg-blue-50 border-l-4 border-blue-600"
-                            : "bg-white"
-                        }`}
-                      >
-                        {/* Step Index */}
-                        <div>
-                          {isDone ? (
-                            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white text-xs">
-                              ✓
+                      return (
+                        <div
+                          key={step.idx}
+                          className={`grid grid-cols-6 items-center px-4 py-4 border-t text-sm ${
+                            isCurrent
+                              ? "bg-blue-50 border-l-4 border-blue-600"
+                              : "bg-white"
+                          }`}
+                        >
+                          {/* Step Index */}
+                          <div>
+                            {isDone ? (
+                              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-white text-xs">
+                                ✓
+                              </div>
+                            ) : (
+                              <div
+                                className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
+                                  isCurrent
+                                    ? "bg-blue-600 text-white"
+                                    : "bg-gray-200 text-gray-600"
+                                }`}
+                              >
+                                {step.idx}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Bin */}
+                          <div className="font-medium">{step.bin}</div>
+
+                          {/* SKU */}
+                          <div>
+                            <div className="font-medium">{step.sku}</div>
+                            <div className="text-xs text-gray-500">
+                              {step.skuSub}
                             </div>
-                          ) : (
-                            <div
-                              className={`flex h-6 w-6 items-center justify-center rounded-full text-xs ${
-                                isCurrent
-                                  ? "bg-blue-600 text-white"
-                                  : "bg-gray-200 text-gray-600"
-                              }`}
-                            >
-                              {step.idx}
-                            </div>
-                          )}
-                        </div>
+                          </div>
 
-                        {/* Bin */}
-                        <div className="font-medium">{step.bin}</div>
+                          {/* Required */}
+                          <div>{step.req}</div>
 
-                        {/* SKU */}
-                        <div>
-                          <div className="font-medium">{step.sku}</div>
-                          <div className="text-xs text-gray-500">
-                            {step.skuSub}
+                          {/* Picked */}
+                          <div>{step.picked}</div>
+
+                          {/* Status */}
+                          <div>
+                            <StatusChip text={step.status} />
                           </div>
                         </div>
-
-                        {/* Required */}
-                        <div>{step.req}</div>
-
-                        {/* Picked */}
-                        <div>{step.picked}</div>
-
-                        {/* Status */}
-                        <div>
-                          <StatusChip text={step.status} />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
               )}
             </div>
@@ -701,6 +718,7 @@ const PickTaskDetail = () => {
           </div>
         </div>
       </div>
+
       {exceptionModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
           <div className="w-full max-w-md rounded-lg bg-white shadow-xl">
