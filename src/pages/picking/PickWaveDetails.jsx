@@ -18,7 +18,7 @@ import {
   Box,
   List,
   History,
-  Loader
+  Loader,
 } from "lucide-react";
 import { useToast } from "../components/toast/ToastProvider";
 
@@ -67,7 +67,9 @@ const PickWaveDetails = () => {
       setWave(response.data);
     } catch (err) {
       console.error("Error fetching wave details:", err);
-      setError(err.response?.data?.message || "Failed to load pick wave details");
+      setError(
+        err.response?.data?.message || "Failed to load pick wave details",
+      );
       toast.error("Failed to load pick wave details");
     } finally {
       setLoading(false);
@@ -78,26 +80,26 @@ const PickWaveDetails = () => {
     try {
       setReleasing(true);
       setError(null);
-      
+
       const response = await http.post(`/pick-waves/${waveId}/release`);
-      
+
       console.log("Wave released successfully:", response.data);
-      
+
       // Refresh wave details to get updated status and tasks
       await fetchWaveDetails();
-      
+
       // Close modal
       setShowReleaseModal(false);
-      
+
       // Show success toast
       toast.success(
         `Wave released successfully! ${response.data.tasks_generated} tasks generated.`,
-        { duration: 5000 }
+        { duration: 5000 },
       );
-      
     } catch (err) {
       console.error("Error releasing wave:", err);
-      const errorMessage = err.response?.data?.message || "Failed to release wave";
+      const errorMessage =
+        err.response?.data?.message || "Failed to release wave";
       setError(errorMessage);
       toast.error(errorMessage);
     } finally {
@@ -127,13 +129,13 @@ const PickWaveDetails = () => {
   // Check if wave can be released
   const canRelease = () => {
     if (!wave) return false;
-    
+
     // Convert to uppercase for case-insensitive comparison
     const status = wave.status?.toUpperCase();
-    
+
     // Release button should be visible for DRAFT or PENDING status
     const releasableStatuses = ["DRAFT", "PENDING"];
-    
+
     return releasableStatuses.includes(status);
   };
 
@@ -164,7 +166,9 @@ const PickWaveDetails = () => {
           <div className="bg-red-50 border border-red-200 rounded-lg p-6">
             <div className="flex items-center gap-3 text-red-800 mb-4">
               <AlertCircle size={24} />
-              <h3 className="text-lg font-semibold">Error Loading Wave Details</h3>
+              <h3 className="text-lg font-semibold">
+                Error Loading Wave Details
+              </h3>
             </div>
             <p className="text-red-700 mb-4">{error}</p>
             <div className="flex gap-3">
@@ -201,8 +205,12 @@ const PickWaveDetails = () => {
 
           <div className="text-center py-12">
             <Package size={48} className="mx-auto text-gray-400 mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">Pick Wave Not Found</h3>
-            <p className="text-gray-500 mb-6">The requested pick wave does not exist or has been removed.</p>
+            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+              Pick Wave Not Found
+            </h3>
+            <p className="text-gray-500 mb-6">
+              The requested pick wave does not exist or has been removed.
+            </p>
             <button
               onClick={() => navigate("/picking")}
               className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
@@ -253,9 +261,10 @@ const PickWaveDetails = () => {
     },
   ];
 
-  const progressPercentage = wave.total_tasks > 0 
-    ? Math.round((wave.completed_tasks / wave.total_tasks) * 100)
-    : 0;
+  const progressPercentage =
+    wave.total_tasks > 0
+      ? Math.round((wave.completed_tasks / wave.total_tasks) * 100)
+      : 0;
 
   // Debug log to check status
   console.log("Current wave status:", wave.status);
@@ -271,8 +280,9 @@ const PickWaveDetails = () => {
               Release Pick Wave
             </h3>
             <p className="text-gray-600 mb-6">
-              Are you sure you want to release wave <span className="font-semibold">{wave.wave_no}</span>?
-              This will generate pick tasks and make them available for picking.
+              Are you sure you want to release wave{" "}
+              <span className="font-semibold">{wave.wave_no}</span>? This will
+              generate pick tasks and make them available for picking.
             </p>
             <div className="flex justify-end gap-3">
               <button
@@ -320,7 +330,7 @@ const PickWaveDetails = () => {
                 </h1>
                 <span
                   className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-semibold ${getStatusColor(
-                    wave.status
+                    wave.status,
                   )}`}
                 >
                   {wave.status?.replace("_", " ")}
@@ -339,8 +349,18 @@ const PickWaveDetails = () => {
                 onClick={handleRefresh}
                 className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                <svg
+                  className="w-4 h-4"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                  />
                 </svg>
                 Refresh
               </button>
@@ -352,7 +372,7 @@ const PickWaveDetails = () => {
                 <Printer size={16} />
                 Print
               </button>
-              
+
               {/* Release Button - Visible for DRAFT or PENDING status */}
               {canRelease() && (
                 <button
@@ -378,9 +398,14 @@ const PickWaveDetails = () => {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <div className="flex items-start gap-3">
-              <AlertCircle size={20} className="text-red-600 flex-shrink-0 mt-0.5" />
+              <AlertCircle
+                size={20}
+                className="text-red-600 flex-shrink-0 mt-0.5"
+              />
               <div className="flex-1">
-                <h4 className="text-sm font-semibold text-red-800 mb-1">Error</h4>
+                <h4 className="text-sm font-semibold text-red-800 mb-1">
+                  Error
+                </h4>
                 <p className="text-sm text-red-700">{error}</p>
               </div>
               <button
@@ -397,17 +422,23 @@ const PickWaveDetails = () => {
         <div className="mb-6">
           <div className="flex justify-between items-center mb-2">
             <span className="text-sm font-medium text-gray-700">Progress</span>
-            <span className="text-sm font-semibold text-blue-600">{progressPercentage}%</span>
+            <span className="text-sm font-semibold text-blue-600">
+              {progressPercentage}%
+            </span>
           </div>
           <div className="h-2 bg-gray-200 rounded-full overflow-hidden">
-            <div 
+            <div
               className="h-full bg-blue-600 rounded-full transition-all duration-300"
               style={{ width: `${progressPercentage}%` }}
             />
           </div>
           <div className="flex justify-between mt-1">
-            <span className="text-xs text-gray-500">{wave.completed_tasks || 0} tasks completed</span>
-            <span className="text-xs text-gray-500">{wave.total_tasks || 0} total tasks</span>
+            <span className="text-xs text-gray-500">
+              {wave.completed_tasks || 0} tasks completed
+            </span>
+            <span className="text-xs text-gray-500">
+              {wave.total_tasks || 0} total tasks
+            </span>
           </div>
         </div>
 
@@ -421,9 +452,13 @@ const PickWaveDetails = () => {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500">{stat.label}</p>
-                  <p className="text-2xl font-bold text-gray-900 mt-1">{stat.value}</p>
+                  <p className="text-2xl font-bold text-gray-900 mt-1">
+                    {stat.value}
+                  </p>
                 </div>
-                <div className={`p-3 rounded-full ${stat.bgColor} ${stat.color}`}>
+                <div
+                  className={`p-3 rounded-full ${stat.bgColor} ${stat.color}`}
+                >
                   <stat.icon size={20} />
                 </div>
               </div>
@@ -484,16 +519,24 @@ const PickWaveDetails = () => {
 
           {/* Tab Content */}
           <div className="p-6">
-            {activeTab === "summary" && <SummaryTab wave={wave} formatDateTime={formatDateTime} />}
-            {activeTab === "orders" && <OrdersTab orders={wave.orders} formatDateTime={formatDateTime} />}
-            {activeTab === "tasks" && <TasksTab tasks={wave.tasks} formatDateTime={formatDateTime} />}
-            {activeTab === "timeline" && <TimelineTab wave={wave} formatDateTime={formatDateTime} />}
+            {activeTab === "summary" && (
+              <SummaryTab wave={wave} formatDateTime={formatDateTime} />
+            )}
+            {activeTab === "orders" && (
+              <OrdersTab orders={wave.orders} formatDateTime={formatDateTime} />
+            )}
+            {activeTab === "tasks" && (
+              <TasksTab tasks={wave.tasks} formatDateTime={formatDateTime} />
+            )}
+            {activeTab === "timeline" && (
+              <TimelineTab wave={wave} formatDateTime={formatDateTime} />
+            )}
           </div>
         </div>
       </div>
     </div>
   );
-};  
+};
 
 // Summary Tab Component
 const SummaryTab = ({ wave, formatDateTime }) => {
@@ -509,30 +552,39 @@ const SummaryTab = ({ wave, formatDateTime }) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-600">Wave Type:</span>
-              <span className="text-sm font-medium text-gray-900">{wave.wave_type}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {wave.wave_type}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-600">Strategy:</span>
-              <span className="text-sm font-medium text-gray-900">{wave.wave_strategy}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {wave.wave_strategy}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-600">Priority:</span>
-              <span className={`text-sm font-medium px-2 py-1 rounded ${
-                wave.priority === "HIGH" 
-                  ? "bg-red-100 text-red-800" 
-                  : "bg-gray-100 text-gray-800"
-              }`}>
+              <span
+                className={`text-sm font-medium px-2 py-1 rounded ${
+                  wave.priority === "HIGH"
+                    ? "bg-red-100 text-red-800"
+                    : "bg-gray-100 text-gray-800"
+                }`}
+              >
                 {wave.priority}
               </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-600">Zone Filter:</span>
-              <span className="text-sm font-medium text-gray-900">{wave.zone_filter || "N/A"}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {wave.zone_filter || "N/A"}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2">
               <span className="text-sm text-gray-600">Warehouse:</span>
               <span className="text-sm font-medium text-gray-900">
-                {wave.warehouse?.warehouse_name} ({wave.warehouse?.warehouse_code})
+                {wave.warehouse?.warehouse_name} (
+                {wave.warehouse?.warehouse_code})
               </span>
             </div>
           </div>
@@ -547,12 +599,16 @@ const SummaryTab = ({ wave, formatDateTime }) => {
           <div className="space-y-4">
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-600">Carrier:</span>
-              <span className="text-sm font-medium text-gray-900">{wave.carrier || "N/A"}</span>
+              <span className="text-sm font-medium text-gray-900">
+                {wave.carrier || "N/A"}
+              </span>
             </div>
             <div className="flex justify-between items-center py-2 border-b border-gray-100">
               <span className="text-sm text-gray-600">Cutoff Time:</span>
               <span className="text-sm font-medium text-gray-900">
-                {wave.carrier_cutoff_time ? formatDateTime(wave.carrier_cutoff_time) : "N/A"}
+                {wave.carrier_cutoff_time
+                  ? formatDateTime(wave.carrier_cutoff_time)
+                  : "N/A"}
               </span>
             </div>
           </div>
@@ -574,15 +630,28 @@ const SummaryTab = ({ wave, formatDateTime }) => {
           {[
             { label: "Created", time: wave.createdAt, icon: Calendar },
             { label: "Released", time: wave.released_at, icon: Clock },
-            { label: "Picking Started", time: wave.picking_started_at, icon: Clock },
-            { label: "Picking Completed", time: wave.picking_completed_at, icon: CheckCircle },
+            {
+              label: "Picking Started",
+              time: wave.picking_started_at,
+              icon: Clock,
+            },
+            {
+              label: "Picking Completed",
+              time: wave.picking_completed_at,
+              icon: CheckCircle,
+            },
           ].map((item, index) => (
-            <div key={index} className="bg-white rounded-lg border border-gray-200 p-4">
+            <div
+              key={index}
+              className="bg-white rounded-lg border border-gray-200 p-4"
+            >
               <div className="flex items-center gap-3 mb-2">
                 <div className="p-2 bg-blue-50 rounded-lg">
                   <item.icon size={16} className="text-blue-600" />
                 </div>
-                <span className="text-sm font-medium text-gray-700">{item.label}</span>
+                <span className="text-sm font-medium text-gray-700">
+                  {item.label}
+                </span>
               </div>
               <p className="text-sm font-semibold text-gray-900">
                 {item.time ? formatDateTime(item.time) : "Pending"}
@@ -641,13 +710,19 @@ const OrdersTab = ({ orders, formatDateTime }) => {
               <td className="py-3 px-4">
                 <div className="flex items-center gap-2">
                   <FileText size={14} className="text-gray-400" />
-                  <span className="font-medium text-blue-600">{order.order_no}</span>
+                  <span className="font-medium text-blue-600">
+                    {order.order_no}
+                  </span>
                 </div>
               </td>
               <td className="py-3 px-4">
                 <div>
-                  <p className="font-medium text-gray-900">{order.customer_name}</p>
-                  <p className="text-xs text-gray-500 truncate max-w-[200px]">{order.customer_email}</p>
+                  <p className="font-medium text-gray-900">
+                    {order.customer_name}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate max-w-[200px]">
+                    {order.customer_email}
+                  </p>
                 </div>
               </td>
               <td className="py-3 px-4">
@@ -659,13 +734,15 @@ const OrdersTab = ({ orders, formatDateTime }) => {
                 <span className="font-medium">{order.total_ordered_units}</span>
               </td>
               <td className="py-3 px-4">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
-                  order.status === "PICKED" 
-                    ? "bg-green-100 text-green-800"
-                    : order.status === "ALLOCATED"
-                    ? "bg-blue-100 text-blue-800"
-                    : "bg-gray-100 text-gray-800"
-                }`}>
+                <span
+                  className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${
+                    order.status === "PICKED"
+                      ? "bg-green-100 text-green-800"
+                      : order.status === "ALLOCATED"
+                        ? "bg-blue-100 text-blue-800"
+                        : "bg-gray-100 text-gray-800"
+                  }`}
+                >
                   {order.status}
                 </span>
               </td>
@@ -687,6 +764,7 @@ const OrdersTab = ({ orders, formatDateTime }) => {
 
 // Tasks Tab Component
 const TasksTab = ({ tasks, formatDateTime }) => {
+  const navigate = useNavigate();
   if (!tasks || tasks.length === 0) {
     return (
       <div className="text-center py-12">
@@ -718,13 +796,20 @@ const TasksTab = ({ tasks, formatDateTime }) => {
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-sm text-gray-500 mb-1">Completed Tasks</div>
           <div className="text-2xl font-bold text-green-600">
-            {tasks.filter(t => t.status === "COMPLETED").length}
+            {tasks.filter((t) => t.status === "COMPLETED").length}
           </div>
         </div>
         <div className="bg-white border border-gray-200 rounded-lg p-4">
           <div className="text-sm text-gray-500 mb-1">Completion Rate</div>
           <div className="text-2xl font-bold text-blue-600">
-            {tasks.length > 0 ? Math.round((tasks.filter(t => t.status === "COMPLETED").length / tasks.length) * 100) : 0}%
+            {tasks.length > 0
+              ? Math.round(
+                  (tasks.filter((t) => t.status === "COMPLETED").length /
+                    tasks.length) *
+                    100,
+                )
+              : 0}
+            %
           </div>
         </div>
       </div>
@@ -751,41 +836,64 @@ const TasksTab = ({ tasks, formatDateTime }) => {
               <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
                 Duration
               </th>
+              <th className="text-left py-3 px-4 text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                Actions
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-200">
             {tasks.map((task) => {
-              const startTime = task.pick_started_at ? new Date(task.pick_started_at) : null;
-              const endTime = task.pick_completed_at ? new Date(task.pick_completed_at) : null;
-              const duration = startTime && endTime 
-                ? Math.round((endTime - startTime) / 1000)
+              const startTime = task.pick_started_at
+                ? new Date(task.pick_started_at)
                 : null;
+              const endTime = task.pick_completed_at
+                ? new Date(task.pick_completed_at)
+                : null;
+              const duration =
+                startTime && endTime
+                  ? Math.round((endTime - startTime) / 1000)
+                  : null;
 
               return (
-                <tr key={task.id} className="hover:bg-gray-50 transition-colors">
+                <tr
+                  key={task.id}
+                  className="hover:bg-gray-50 transition-colors"
+                >
                   <td className="py-3 px-4">
-                    <span className="font-medium text-gray-900">{task.task_no}</span>
+                    <span className="font-medium text-gray-900">
+                      {task.task_no}
+                    </span>
                   </td>
                   <td className="py-3 px-4">
                     <div>
-                      <p className="font-medium text-gray-900">{task.sku?.sku_name}</p>
-                      <p className="text-xs text-gray-500">{task.sku?.sku_code}</p>
+                      <p className="font-medium text-gray-900">
+                        {task.sku?.sku_name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {task.sku?.sku_code}
+                      </p>
                     </div>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
                       <MapPin size={14} className="text-gray-400" />
-                      <span className="font-mono text-sm">{task.sourceLocation?.location_code}</span>
+                      <span className="font-mono text-sm">
+                        {task.sourceLocation?.location_code}
+                      </span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{task.qty_picked}/{task.qty_to_pick}</span>
+                      <span className="font-medium text-gray-900">
+                        {task.qty_picked}/{task.qty_to_pick}
+                      </span>
                       <span className="text-xs text-gray-500">units</span>
                     </div>
                   </td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTaskStatusColor(task.status)}`}>
+                    <span
+                      className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${getTaskStatusColor(task.status)}`}
+                    >
                       {task.status}
                     </span>
                   </td>
@@ -795,6 +903,14 @@ const TasksTab = ({ tasks, formatDateTime }) => {
                     ) : (
                       <span className="text-sm text-gray-400">N/A</span>
                     )}
+                  </td>
+                  <td className="py-3 px-4">
+                    <button
+                      onClick={() => navigate(`/picking/tasks/${task.id}`)}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      View Details
+                    </button>
                   </td>
                 </tr>
               );
@@ -857,24 +973,32 @@ const TimelineTab = ({ wave, formatDateTime }) => {
   return (
     <div className="relative">
       <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-gray-200"></div>
-      
+
       <div className="space-y-8 relative z-10">
         {timelineEvents.map((event, index) => {
           const status = getEventStatus(event);
-          
+
           return (
             <div key={index} className="flex items-start gap-4">
-              <div className={`flex-shrink-0 w-12 h-12 rounded-full border-2 ${status.borderColor} ${status.color} flex items-center justify-center text-lg font-bold`}>
+              <div
+                className={`flex-shrink-0 w-12 h-12 rounded-full border-2 ${status.borderColor} ${status.color} flex items-center justify-center text-lg font-bold`}
+              >
                 {status.icon}
               </div>
               <div className="flex-1 bg-white border border-gray-200 rounded-lg p-4 shadow-sm">
                 <div className="flex justify-between items-start mb-2">
                   <div>
-                    <h4 className="font-semibold text-gray-900">{event.title}</h4>
-                    <p className="text-sm text-gray-500 mt-1">{event.description}</p>
+                    <h4 className="font-semibold text-gray-900">
+                      {event.title}
+                    </h4>
+                    <p className="text-sm text-gray-500 mt-1">
+                      {event.description}
+                    </p>
                   </div>
                   <span className="text-sm text-gray-500 whitespace-nowrap">
-                    {event.timestamp ? formatDateTime(event.timestamp) : "Pending"}
+                    {event.timestamp
+                      ? formatDateTime(event.timestamp)
+                      : "Pending"}
                   </span>
                 </div>
                 {event.timestamp && (

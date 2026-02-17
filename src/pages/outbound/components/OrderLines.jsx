@@ -11,7 +11,6 @@ const ReadOnlyLines = ({ data = [] }) => (
         key={l.id || i}
         className="border border-gray-200 rounded-lg p-3 bg-white md:border-0 md:p-0 md:bg-transparent"
       >
-        {/* Mobile/Tablet Card Layout */}
         <div className="grid grid-cols-2 gap-2 text-sm md:hidden">
           <div>
             <span className="font-medium text-gray-500">SKU:</span>{" "}
@@ -37,7 +36,6 @@ const ReadOnlyLines = ({ data = [] }) => (
           )}
         </div>
 
-        {/* Desktop Grid Layout */}
         <div className="hidden md:grid md:grid-cols-12 md:gap-3 md:py-2 md:text-sm md:text-gray-600">
           <div className="col-span-3">{l.sku || ""}</div>
           <div className="col-span-2">{l.ordered_qty || ""}</div>
@@ -89,7 +87,6 @@ const OrderLines = ({ lines = [], onChange, disabled, clientId }) => {
   return (
     <>
       <div className="rounded-lg border border-gray-200 bg-white overflow-hidden">
-        {/* Header */}
         <div className="px-3 py-3 border-b md:px-4 flex items-center justify-between">
           <div className="text-sm font-semibold text-gray-900">Order Lines</div>
           <button
@@ -101,7 +98,6 @@ const OrderLines = ({ lines = [], onChange, disabled, clientId }) => {
           </button>
         </div>
 
-        {/* Table */}
         <div className="px-3 py-3 md:px-4">
           {lines.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
@@ -116,36 +112,72 @@ const OrderLines = ({ lines = [], onChange, disabled, clientId }) => {
             </div>
           ) : (
             <>
-              {/* Column Titles - Desktop Only */}
-              <div className="hidden md:grid md:grid-cols-12 md:gap-3 text-xs font-medium text-gray-500 border-b pb-2">
-                <div className="col-span-3">SKU</div>
-                <div className="col-span-2">Quantity</div>
-                <div className="col-span-2">UOM</div>
-                <div className="col-span-2">Allocation Rule</div>
-                <div className="col-span-2">Unit Price</div>
-                <div className="col-span-1">Actions</div>
-              </div>
-
-              {/* Lines */}
-              <div className="space-y-3 mt-3 md:space-y-0 md:divide-y md:mt-0">
+              <div className="space-y-3 mt-3 md:mt-0">
                 {lines.map((l, idx) => (
                   <div key={l.id || idx}>
-                    {/* Mobile/Tablet Card Layout */}
                     <div className="border border-gray-200 rounded-lg p-3 space-y-2 md:hidden">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="text-sm font-medium text-gray-900">
-                            {l.sku || "No SKU"}
+                      ...your mobile card content...
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              <div className="hidden sm:block overflow-x-auto mt-3">
+                <div className="min-w-[500px]">
+                  <div className="grid grid-cols-12 gap-2 text-[11px] font-semibold ... pb-1">
+                    <div className="col-span-2">SKU</div>
+                    <div className="col-span-2">Quantity</div>
+                    <div className="col-span-2">UOM</div>
+                    <div className="col-span-2">Allocation Rule</div>
+                    <div className="col-span-2">Unit Price</div>
+                    <div className="col-span-2">Actions</div>
+                  </div>
+
+                  <div className="divide-y">
+                    {lines.map((l, idx) => (
+                      <div
+                        key={l.id || idx}
+                        className="grid grid-cols-12 gap-2 py-2 items-center"
+                      >
+                        <div className="col-span-2">
+                          <div className="text-sm text-gray-900">
+                            {l.sku || "-"}
                           </div>
-                          <div className="text-xs text-gray-500 mt-1">
-                            Qty: {l.ordered_qty} {l.uom}
-                          </div>
+                          {l.batch_preference && (
+                            <div className="text-xs text-gray-500">
+                              Batch: {l.batch_preference}
+                            </div>
+                          )}
                         </div>
-                        <div className="flex gap-2">
+
+                        <div className="col-span-2 text-sm text-gray-900">
+                          {l.ordered_qty || "-"}
+                        </div>
+                        <div className="col-span-2 text-sm text-gray-600">
+                          {l.uom || "-"}
+                        </div>
+                        <div className="col-span-2 text-sm text-gray-600">
+                          {l.allocation_rule || "-"}
+                        </div>
+
+                        <div className="col-span-2">
+                          <div className="text-sm text-gray-900">
+                            {l.unit_price
+                              ? `$${parseFloat(l.unit_price).toFixed(2)}`
+                              : "-"}
+                          </div>
+                          {l.discount_percent > 0 && (
+                            <div className="text-xs text-green-600">
+                              -{l.discount_percent}% off
+                            </div>
+                          )}
+                        </div>
+
+                        <div className="col-span-2 flex items-center gap-1">
                           <button
                             type="button"
                             onClick={() => setEditModal({ open: true, idx })}
-                            className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 hover:text-blue-600"
+                            className="p-2 rounded-md hover:bg-gray-50 text-gray-400 hover:text-blue-600"
                             title="Edit"
                           >
                             <Edit size={16} />
@@ -153,109 +185,28 @@ const OrderLines = ({ lines = [], onChange, disabled, clientId }) => {
                           <button
                             type="button"
                             onClick={() => setDeleteIdx(idx)}
-                            className="p-1.5 rounded-md hover:bg-gray-100 text-gray-500 hover:text-red-600"
+                            className="p-2 rounded-md hover:bg-gray-50 text-gray-400 hover:text-red-600"
                             title="Delete"
                           >
                             <Trash2 size={16} />
                           </button>
                         </div>
                       </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs text-gray-600 pt-2 border-t">
-                        <div>
-                          <span className="font-medium">Rule:</span>{" "}
-                          {l.allocation_rule || "-"}
-                        </div>
-                        <div>
-                          <span className="font-medium">Price:</span>{" "}
-                          {l.unit_price ? `$${l.unit_price}` : "-"}
-                        </div>
-                        {l.batch_preference && (
-                          <div className="col-span-2">
-                            <span className="font-medium">Batch:</span>{" "}
-                            {l.batch_preference}
-                          </div>
-                        )}
-                        {l.notes && (
-                          <div className="col-span-2">
-                            <span className="font-medium">Note:</span> {l.notes}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Desktop Grid Layout */}
-                    <div className="hidden md:grid md:grid-cols-12 md:gap-3 md:py-3 md:items-center">
-                      <div className="col-span-3">
-                        <div className="text-sm text-gray-900">
-                          {l.sku || "-"}
-                        </div>
-                        {l.batch_preference && (
-                          <div className="text-xs text-gray-500">
-                            Batch: {l.batch_preference}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="col-span-2">
-                        <div className="text-sm text-gray-900">
-                          {l.ordered_qty || "-"}
-                        </div>
-                      </div>
-
-                      <div className="col-span-2">
-                        <div className="text-sm text-gray-600">
-                          {l.uom || "-"}
-                        </div>
-                      </div>
-
-                      <div className="col-span-2">
-                        <div className="text-sm text-gray-600">
-                          {l.allocation_rule || "-"}
-                        </div>
-                      </div>
-
-                      <div className="col-span-2">
-                        <div className="text-sm text-gray-900">
-                          {l.unit_price
-                            ? `$${parseFloat(l.unit_price).toFixed(2)}`
-                            : "-"}
-                        </div>
-                        {l.discount_percent > 0 && (
-                          <div className="text-xs text-green-600">
-                            -{l.discount_percent}% off
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="col-span-1 flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => setEditModal({ open: true, idx })}
-                          className="p-2 rounded-md hover:bg-gray-50 text-gray-400 hover:text-blue-600"
-                          title="Edit"
-                        >
-                          <Edit size={16} />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeleteIdx(idx)}
-                          className="p-2 rounded-md hover:bg-gray-50 text-gray-400 hover:text-red-600"
-                          title="Delete"
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      </div>
-                    </div>
+                    ))}
                   </div>
-                ))}
+                </div>
               </div>
             </>
           )}
         </div>
+        {/* <div className="px-3 py-3 border-t md:px-4 flex items-center justify-between">
+          <div className="text-sm font-semibold text-gray-900"></div>
+          <div className="px-3 py-1.5 text-sm rounded-md bg-blue-600 text-white hover:bg-blue-700 font-medium transition-colors">
+            total Quetity
+          </div>
+        </div> */}
       </div>
 
-      {/* Add Line Modal */}
       <AddOrderLineModal
         open={addModal}
         clientId={clientId}
@@ -263,7 +214,6 @@ const OrderLines = ({ lines = [], onChange, disabled, clientId }) => {
         onSave={handleAddLine}
       />
 
-      {/* Edit Line Modal */}
       <AddOrderLineModal
         open={editModal.open}
         clientId={clientId}
@@ -272,7 +222,6 @@ const OrderLines = ({ lines = [], onChange, disabled, clientId }) => {
         onSave={handleEditLine}
       />
 
-      {/* Confirm Delete Modal */}
       <ConfirmDeleteModal
         open={deleteIdx !== null}
         title="Delete line?"

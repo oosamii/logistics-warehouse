@@ -4,6 +4,7 @@ import FilterBar from "../components/FilterBar";
 import CusTable from "../components/CusTable";
 import http from "../../api/http";
 import { format } from "date-fns";
+import { useNavigate } from "react-router-dom";
 
 const TaskStatusPill = ({ status }) => {
   const statusMap = {
@@ -38,6 +39,8 @@ const TaskStatusPill = ({ status }) => {
 };
 
 const PickTasks = ({ onTaskSelect }) => {
+  const navigate = useNavigate();
+
   const [filters, setFilters] = useState({
     date: "Today",
     warehouse: "All Warehouses",
@@ -279,7 +282,7 @@ const PickTasks = ({ onTaskSelect }) => {
       title: "Actions",
       render: (r) => (
         <button
-          onClick={() => onTaskSelect?.(r.id)}
+          onClick={() => navigate(`/picking/tasks/${r.id}`)}
           className={`text-sm font-medium px-3 py-1.5 rounded-md transition-colors ${
             r.status === "IN PROGRESS" || r.status === "IN_PROGRESS"
               ? "text-orange-600 hover:text-orange-800 hover:bg-orange-50"

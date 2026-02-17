@@ -6,14 +6,19 @@ import PickWaves from "./PickWaves";
 import PickTasks from "./PickTasks";
 import PickTaskDetail from "./PickTaskDetail";
 import PickExceptions from "./PickExceptions";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import PickWaveDetails from "./PickWaveDetails"; // Import the component
 
 const Picking = () => {
   const navigate = useNavigate();
-  const [activeTab, setActiveTab] = useState("waves");
+  const [searchParams, setSearchParams] = useSearchParams();
+  const activeTab = searchParams.get("tab") || "waves";
   const [selectedTaskId, setSelectedTaskId] = useState(null);
   const [selectedWaveId, setSelectedWaveId] = useState(null); // Add this state
+
+  const setActiveTab = (tab) => {
+    setSearchParams({ tab });
+  };
 
   const actions = (
     <>
@@ -43,23 +48,25 @@ const Picking = () => {
     setActiveTab("taskDetail");
   };
 
-  // Handle back from wave details
   const handleBackFromWaveDetails = () => {
     setSelectedWaveId(null);
     setActiveTab("waves");
   };
 
-  // Handle back from task detail
   const handleBackFromTaskDetail = () => {
     setSelectedTaskId(null);
     setActiveTab("tasks");
   };
 
-  // Render the appropriate content based on active tab
   const renderContent = () => {
     switch (activeTab) {
       case "waves":
-        return <PickWaves onWaveSelect={handleWaveSelect} onTaskSelect={handleTaskSelect} />;
+        return (
+          <PickWaves
+            onWaveSelect={handleWaveSelect}
+            onTaskSelect={handleTaskSelect}
+          />
+        );
       case "tasks":
         return <PickTasks onTaskSelect={handleTaskSelect} />;
       case "taskDetail":
@@ -79,7 +86,12 @@ const Picking = () => {
       case "exceptions":
         return <PickExceptions />;
       default:
-        return <PickWaves onWaveSelect={handleWaveSelect} onTaskSelect={handleTaskSelect} />;
+        return (
+          <PickWaves
+            onWaveSelect={handleWaveSelect}
+            onTaskSelect={handleTaskSelect}
+          />
+        );
     }
   };
 
@@ -88,7 +100,7 @@ const Picking = () => {
     if (activeTab === "taskDetail") {
       return [{ key: "taskDetail", label: "Pick Task Detail", isActive: true }];
     }
-    
+
     if (activeTab === "waveDetails") {
       return [{ key: "waveDetails", label: "Wave Details", isActive: true }];
     }
@@ -129,6 +141,7 @@ const Picking = () => {
               >
                 Pick Waves
               </button>
+
               <button
                 onClick={() => setActiveTab("tasks")}
                 className={`px-2 pb-3 text-sm font-medium ${
@@ -139,6 +152,7 @@ const Picking = () => {
               >
                 Pick Tasks
               </button>
+
               <button
                 onClick={() => setActiveTab("exceptions")}
                 className={`px-2 pb-3 text-sm font-medium ${

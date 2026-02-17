@@ -136,7 +136,6 @@ const CreateSalesOrder = () => {
       awbTracking: data.tracking_number || "",
     });
 
-    // ORDER LINES
     setLines(
       data.lines?.map((l) => ({
         id: l.id,
@@ -186,8 +185,11 @@ const CreateSalesOrder = () => {
   const setSh = (k, v) => setShipping((p) => ({ ...p, [k]: v }));
 
   const totals = useMemo(() => {
-    const totalLines = lines.filter((l) => l.sku || l.name).length;
-    const totalUnits = lines.reduce((s, l) => s + (Number(l.qty) || 0), 0);
+    const totalLines = (lines || []).filter((l) => l.sku || l.uom).length;
+    const totalUnits = lines.reduce(
+      (s, l) => s + (Number(l.ordered_qty) || 0),
+      0,
+    );
     return { totalLines, totalUnits };
   }, [lines]);
 
@@ -198,13 +200,13 @@ const CreateSalesOrder = () => {
     const okClient = !!basicData?.client_id;
 
     const okShipTo = !!shipTo.name && !!shipTo.phone && !!shipTo.address1;
-    const okLines = totals.totalLines > 0 && totals.totalUnits > 0;
+    const okLines = totals?.totalLines > 0 && totals?.totalUnits > 0;
 
     return [
       { label: "Warehouse Selected", done: okWarehouse },
       { label: "Client Selected", done: okClient },
       { label: "Ship-to Filled", done: okShipTo },
-      { label: "Lines Added (>0)", done: okLines },
+      { label: "Lines Added", done: okLines },
     ];
   }, [header, shipTo, totals]);
 
@@ -424,7 +426,6 @@ const CreateSalesOrder = () => {
       }
     >
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* LEFT */}
         <div className="lg:col-span-8 space-y-6">
           <BasicInformationSection
             ref={basicInfoRef}
@@ -452,7 +453,6 @@ const CreateSalesOrder = () => {
             }}
           />
 
-          {/* Other sections */}
           <ShipToCustomer
             shipTo={shipTo}
             setShipTo={setShipTo}
@@ -462,7 +462,6 @@ const CreateSalesOrder = () => {
             setEmailError={setEmailError}
           />
 
-          {/* Carrier & Shipping */}
           <FormCard title="Carrier & Shipping">
             <FormGrid>
               <InputField
@@ -494,7 +493,6 @@ const CreateSalesOrder = () => {
             </FormGrid>
           </FormCard>
 
-          {/* Order Lines */}
           <OrderLines
             lines={lines}
             onChange={setLines}
@@ -502,7 +500,6 @@ const CreateSalesOrder = () => {
             clientId={header.client_id}
           />
 
-          {/* Allocation Settings */}
           {/* <div className="rounded-lg border border-gray-200 bg-white">
             <div className="px-4 py-3 border-b">
               <div className="text-sm font-semibold text-gray-900">
@@ -600,14 +597,11 @@ const CreateSalesOrder = () => {
             </div>
           </div>
 
-          {/* Documents */}
           <AttachmentsDropzone value={attachments} onChange={setAttachments} />
           <div className="h-10" />
         </div>
 
-        {/* RIGHT */}
         <div className="lg:col-span-4 space-y-6">
-          {/* reuse SummaryCard/ChecklistCard (same layout as screenshot) */}
           <SummaryCard data={summaryData} />
           <ChecklistCard items={readiness} />
           <div className="h-10" />

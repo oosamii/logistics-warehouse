@@ -72,7 +72,7 @@ const NewRoutes = [
   },
   {
     path: "/putawaydetails/:id", // Add :id parameter here
-    element: protect("/putawaydetails", <PutawayDetails />),
+    element: protect("/putawaydetails/:id", <PutawayDetails />),
   },
 
   { path: "/inbound", element: protect("/inbound", <InboundASN />) },
@@ -134,6 +134,10 @@ const NewRoutes = [
 
   { path: "/picking", element: protect("/picking", <Picking />) },
   {
+    path: "/picking/tasks/:taskId",
+    element: protect("/picking/tasks/:taskId", <PickTaskDetail />),
+  },
+  {
     path: "/picking/createPickWavePage",
     element: protect("/picking/createPickWavePage", <CreatePickWavePage />),
   },
@@ -150,10 +154,10 @@ const NewRoutes = [
     path: "/inventory/sku/:skuId",
     element: protect("/inventory/sku/:skuId", <SkuDetailPage />),
   },
-   {
-  path: "/picking/waves/:waveId",
-  element: protect("/picking/waves/:waveId", <PickWaveDetails />),
-},
+  {
+    path: "/picking/waves/:waveId",
+    element: protect("/picking/waves/:waveId", <PickWaveDetails />),
+  },
 ];
 
 export default NewRoutes;

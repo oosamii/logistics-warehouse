@@ -46,11 +46,10 @@ export function useSalesOrders(toast) {
       const warehouses = warehousesRes.data?.success
         ? warehousesRes.data.data || []
         : [];
-
       // Fetch clients (you might need to adjust this endpoint)
       const clientsRes = await http.get("/clients");
       const clients = clientsRes.data?.success
-        ? clientsRes.data.data || []
+        ? clientsRes?.data?.data?.clients || []
         : [];
 
       // Transform data for dropdowns
@@ -61,7 +60,6 @@ export function useSalesOrders(toast) {
           label: `${w.warehouse_code} - ${w.warehouse_name}`,
         })),
       ];
-
       const clientsOptions = [
         { value: "All", label: "All Clients" },
         ...clients.map((c) => ({
@@ -114,7 +112,6 @@ export function useSalesOrders(toast) {
       params.append("limit", f.limit);
 
       const url = `/sales-orders/?${params.toString()}`;
-      console.log("Fetching sales orders from:", url);
 
       const res = await http.get(url);
 
