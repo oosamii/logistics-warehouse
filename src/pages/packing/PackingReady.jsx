@@ -265,7 +265,7 @@ const PackingReady = ({ onOrderSelect }) => {
   };
 
   const handleApplyFilters = () => {
-    fetchOrders(1);cffc
+    fetchOrders(1);
   };
 
   const handleResetFilters = () => {

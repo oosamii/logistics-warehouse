@@ -29,7 +29,7 @@ const PackingInProgress = ({ onOrderSelect }) => {
     client: "",
     search: "",
   });
-  
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -37,24 +37,26 @@ const PackingInProgress = ({ onOrderSelect }) => {
     total: 0,
     page: 1,
     pages: 1,
-    limit: 10
+    limit: 10,
   });
 
   // Fetch orders from API
   const fetchOrders = async (page = 1) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await http.get('/sales-orders/', {
+      const response = await http.get("/sales-orders/", {
         params: {
-          status: 'PACKING',
+          status: "PACKING",
           page: page,
           limit: pagination.limit,
           ...(filters.search && { search: filters.search }),
-          ...(filters.warehouse && filters.warehouse !== 'All' && { warehouse_id: filters.warehouse }),
-          ...(filters.client && filters.client !== 'All' && { client_id: filters.client })
-        }
+          ...(filters.warehouse &&
+            filters.warehouse !== "All" && { warehouse_id: filters.warehouse }),
+          ...(filters.client &&
+            filters.client !== "All" && { client_id: filters.client }),
+        },
       });
 
       if (response.data) {
@@ -63,7 +65,7 @@ const PackingInProgress = ({ onOrderSelect }) => {
           total: response.data.total || 0,
           page: response.data.page || 1,
           pages: response.data.pages || 1,
-          limit: pagination.limit
+          limit: pagination.limit,
         });
       }
     } catch (err) {
@@ -81,40 +83,45 @@ const PackingInProgress = ({ onOrderSelect }) => {
 
   // Transform API data to match what's ACTUALLY available
   const transformOrderData = (orders) => {
-    return orders.map(order => {
+    return orders.map((order) => {
       // Calculate packed units from lines
       const totalUnits = parseFloat(order.total_ordered_units) || 0;
       const packedUnits = parseFloat(order.total_packed_units) || 0;
-      
+
       // Format started time from packing_started_at
       const formatStartedTime = () => {
         if (!order.packing_started_at) return "-";
-        
+
         const startedDate = new Date(order.packing_started_at);
         const now = new Date();
         const isToday = startedDate.toDateString() === now.toDateString();
-        
+
         if (isToday) {
-          return `Today ${startedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+          return `Today ${startedDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
         } else {
-          return startedDate.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric',
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: true 
+          return startedDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
           });
         }
       };
 
       // Format ship to location
-      const shipTo = `${order.ship_to_city || ''}, ${order.ship_to_state || ''}`.replace(/^, |, $/g, '') || '-';
+      const shipTo =
+        `${order.ship_to_city || ""}, ${order.ship_to_state || ""}`.replace(
+          /^, |, $/g,
+          "",
+        ) || "-";
 
       return {
         id: order.id,
         orderNo: order.order_no,
         client: order.client?.client_name || `Client #${order.client_id}`,
-        warehouse: order.warehouse?.warehouse_code || `WH-${order.warehouse_id}`,
+        warehouse:
+          order.warehouse?.warehouse_code || `WH-${order.warehouse_id}`,
         shipTo: shipTo,
         customerName: order.customer_name,
         priority: order.priority || "NORMAL",
@@ -125,20 +132,30 @@ const PackingInProgress = ({ onOrderSelect }) => {
         referenceNo: order.reference_no,
         carrier: order.carrier,
         slaDueDate: order.sla_due_date,
-        originalOrder: order
+        originalOrder: order,
       };
     });
   };
 
   // Filter options based on actual API data
   const getWarehouseOptions = () => {
-    const uniqueWarehouses = [...new Set(orders.map(o => o.warehouse?.warehouse_code || `WH-${o.warehouse_id}`))];
-    return ['All', ...uniqueWarehouses];
+    const uniqueWarehouses = [
+      ...new Set(
+        orders.map(
+          (o) => o.warehouse?.warehouse_code || `WH-${o.warehouse_id}`,
+        ),
+      ),
+    ];
+    return ["All", ...uniqueWarehouses];
   };
 
   const getClientOptions = () => {
-    const uniqueClients = [...new Set(orders.map(o => o.client?.client_name || `Client #${o.client_id}`))];
-    return ['All', ...uniqueClients];
+    const uniqueClients = [
+      ...new Set(
+        orders.map((o) => o.client?.client_name || `Client #${o.client_id}`),
+      ),
+    ];
+    return ["All", ...uniqueClients];
   };
 
   const filterConfig = [
@@ -189,25 +206,25 @@ const PackingInProgress = ({ onOrderSelect }) => {
         </button>
       ),
     },
-    { 
-      key: "client", 
+    {
+      key: "client",
       title: "Client",
-      render: (r) => r.client || "-"
+      render: (r) => r.client || "-",
     },
-    { 
-      key: "shipTo", 
+    {
+      key: "shipTo",
       title: "Ship To",
-      render: (r) => r.shipTo || "-"
+      render: (r) => r.shipTo || "-",
     },
-    { 
-      key: "customerName", 
+    {
+      key: "customerName",
       title: "Customer",
-      render: (r) => r.customerName || "-"
+      render: (r) => r.customerName || "-",
     },
-    { 
-      key: "startedTime", 
+    {
+      key: "startedTime",
       title: "Started Time",
-      render: (r) => r.startedTime || "-"
+      render: (r) => r.startedTime || "-",
     },
     {
       key: "packedUnits",
@@ -225,8 +242,8 @@ const PackingInProgress = ({ onOrderSelect }) => {
             r.priority === "HIGH"
               ? "bg-orange-100 text-orange-700"
               : r.priority === "NORMAL"
-              ? "bg-blue-100 text-blue-700"
-              : "bg-gray-100 text-gray-700"
+                ? "bg-blue-100 text-blue-700"
+                : "bg-gray-100 text-gray-700"
           }`}
         >
           {r.priority}
@@ -238,15 +255,20 @@ const PackingInProgress = ({ onOrderSelect }) => {
       title: "Status",
       render: (r) => {
         const statusMap = {
-          "PACKING": { text: "Packing", color: "bg-blue-100 text-blue-700" },
-          "PAUSED": { text: "Paused", color: "bg-yellow-100 text-yellow-700" },
-          "WAITING": { text: "Waiting", color: "bg-orange-100 text-orange-700" }
+          PACKING: { text: "Packing", color: "bg-blue-100 text-blue-700" },
+          PAUSED: { text: "Paused", color: "bg-yellow-100 text-yellow-700" },
+          WAITING: { text: "Waiting", color: "bg-orange-100 text-orange-700" },
         };
-        
-        const status = statusMap[r.status] || { text: r.status, color: "bg-gray-100 text-gray-700" };
-        
+
+        const status = statusMap[r.status] || {
+          text: r.status,
+          color: "bg-gray-100 text-gray-700",
+        };
+
         return (
-          <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${status.color}`}>
+          <span
+            className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${status.color}`}
+          >
             {status.text}
           </span>
         );
@@ -255,14 +277,14 @@ const PackingInProgress = ({ onOrderSelect }) => {
     {
       key: "carrier",
       title: "Carrier",
-      render: (r) => r.carrier || "-"
+      render: (r) => r.carrier || "-",
     },
     {
       key: "actions",
       title: "Actions",
       render: (r) => (
         <button
-          onClick={() => onOrderSelect?.(r.orderNo)}
+          onClick={() => onOrderSelect?.(r.id)}
           className="text-blue-600 text-sm font-medium hover:text-blue-800"
         >
           Resume Packing
@@ -272,7 +294,7 @@ const PackingInProgress = ({ onOrderSelect }) => {
   ];
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleApplyFilters = () => {
@@ -334,11 +356,13 @@ const PackingInProgress = ({ onOrderSelect }) => {
 
       <div className="rounded-lg border border-gray-200 bg-white">
         <CusTable columns={columns} data={transformedData} />
-        
+
         {pagination.pages > 1 && (
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
             <div className="text-sm text-gray-700">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} orders
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+              of {pagination.total} orders
             </div>
             <div className="flex items-center gap-2">
               <button
