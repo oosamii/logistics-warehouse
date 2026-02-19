@@ -1,33 +1,53 @@
 import React from "react";
-import { Package, RotateCw } from "lucide-react";
+import { Package, RotateCw, Phone, Truck, MapPin } from "lucide-react";
 
 const ShipmentOverview = ({ shipmentDetails }) => {
-  const timeline = [
-    {
+  // Generate timeline based on shipment status
+  const generateTimeline = () => {
+    const timeline = [];
+    
+    // Shipment Created
+    timeline.push({
       id: 1,
-      title: "Delivered",
-      meta: "Estimated: Oct 26, 2024",
-      type: "estimate",
-    },
-    {
-      id: 2,
-      title: "In Transit - Arrived at Hub",
-      meta: "Oct 25, 2024 08:15 AM • Newark Facility",
-      type: "active",
-    },
-    {
-      id: 3,
-      title: "Dispatched from Warehouse",
-      meta: "Oct 24, 2024 02:30 PM • WH-NYC-01",
-      type: "done",
-    },
-    {
-      id: 4,
       title: "Shipment Created",
-      meta: "Oct 24, 2024 10:00 AM • System",
+      meta: shipmentDetails.createdAt,
       type: "done",
-    },
-  ];
+    });
+
+    // Dispatched (if applicable)
+    if (shipmentDetails.dispatchTime && shipmentDetails.dispatchTime !== "N/A") {
+      timeline.push({
+        id: 2,
+        title: "Dispatched from Warehouse",
+        meta: `${shipmentDetails.dispatchTime} • ${shipmentDetails.warehouse}`,
+        type: shipmentDetails.rawStatus === "DISPATCHED" ? "active" : "done",
+      });
+    }
+
+    // In Transit (if applicable)
+    if (shipmentDetails.rawStatus === "IN_TRANSIT" || shipmentDetails.rawStatus === "DISPATCHED") {
+      timeline.push({
+        id: 3,
+        title: "In Transit",
+        meta: "Shipment is on the way",
+        type: shipmentDetails.rawStatus === "IN_TRANSIT" ? "active" : "pending",
+      });
+    }
+
+    // Estimated Delivery
+    if (shipmentDetails.estimatedDelivery && shipmentDetails.estimatedDelivery !== "N/A") {
+      timeline.push({
+        id: 4,
+        title: "Estimated Delivery",
+        meta: shipmentDetails.estimatedDelivery,
+        type: "estimate",
+      });
+    }
+
+    return timeline;
+  };
+
+  const timeline = generateTimeline();
 
   return (
     <div className="space-y-6">
@@ -41,24 +61,55 @@ const ShipmentOverview = ({ shipmentDetails }) => {
           <div className="mt-1 text-lg font-bold text-gray-900">
             {shipmentDetails.awb}
           </div>
+          {shipmentDetails.carrierDetails?.phone && (
+            <div className="mt-3 flex items-center gap-2 text-sm text-gray-600">
+              <Phone size={14} />
+              {shipmentDetails.carrierDetails.phone}
+            </div>
+          )}
         </MiniCard>
 
-        <MiniCard title="Standard Overnight" rightTitle="">
-          <div className="text-sm text-gray-500">Contact</div>
-          <div className="mt-1 text-lg font-bold text-gray-900">
-            +1 800-463-3339
+        <MiniCard title="Delivery Information" rightTitle="">
+          <div className="text-sm text-gray-500">Ship To</div>
+          <div className="mt-1 font-semibold text-gray-900">
+            {shipmentDetails.shipToName}
           </div>
+          <div className="mt-1 text-sm text-gray-600">
+            {shipmentDetails.shipToAddress}
+          </div>
+          {shipmentDetails.shipToPhone && (
+            <div className="mt-2 flex items-center gap-2 text-sm text-gray-600">
+              <Phone size={14} />
+              {shipmentDetails.shipToPhone}
+            </div>
+          )}
         </MiniCard>
 
-        <MiniCard title="John Doe (Supervisor)" rightTitle="D-04">
-          <div className="grid grid-cols-2 gap-6">
+        <MiniCard title="Shipment Details" rightTitle="">
+          <div className="grid grid-cols-2 gap-4">
             <div>
-              <div className="text-sm text-gray-500">Vehicle No</div>
-              <div className="mt-1 font-bold text-gray-900">NY-554-KA</div>
+              <div className="text-sm text-gray-500">Total Weight</div>
+              <div className="mt-1 font-bold text-gray-900">
+                {shipmentDetails.totalWeight} kg
+              </div>
             </div>
             <div>
-              <div className="text-sm text-gray-500">Driver</div>
-              <div className="mt-1 font-bold text-gray-900">Mike Ross</div>
+              <div className="text-sm text-gray-500">Shipping Cost</div>
+              <div className="mt-1 font-bold text-gray-900">
+                ${shipmentDetails.shippingCost}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Cartons</div>
+              <div className="mt-1 font-bold text-gray-900">
+                {shipmentDetails.cartons}
+              </div>
+            </div>
+            <div>
+              <div className="text-sm text-gray-500">Last Updated</div>
+              <div className="mt-1 font-bold text-gray-900">
+                {shipmentDetails.updatedAt}
+              </div>
             </div>
           </div>
         </MiniCard>
@@ -70,7 +121,7 @@ const ShipmentOverview = ({ shipmentDetails }) => {
           <div className="text-lg font-semibold text-gray-900">
             Status Timeline
           </div>
-          <div className="flex items-center gap-3 text-sm text-gray-500">
+          {/* <div className="flex items-center gap-3 text-sm text-gray-500">
             <span className="inline-flex items-center gap-2">
               <RotateCw size={14} />
               Last synced: Just now
@@ -78,7 +129,7 @@ const ShipmentOverview = ({ shipmentDetails }) => {
             <button className="font-medium text-blue-600 hover:text-blue-700">
               Sync now
             </button>
-          </div>
+          </div> */}
         </div>
 
         <div className="border-t px-6 py-6">
@@ -86,12 +137,14 @@ const ShipmentOverview = ({ shipmentDetails }) => {
             <div className="absolute left-[11px] top-2 bottom-2 w-px bg-gray-200" />
 
             <div className="space-y-7">
-              {timeline.map((t, idx) => (
+              {timeline.map((t) => (
                 <div key={t.id} className="relative flex gap-4">
                   <TimelineDot type={t.type} />
                   <div className="min-w-0">
                     <div
-                      className={`font-semibold ${idx === 0 ? "text-gray-600" : "text-gray-900"}`}
+                      className={`font-semibold ${
+                        t.type === "estimate" ? "text-gray-600" : "text-gray-900"
+                      }`}
                     >
                       {t.title}
                     </div>
@@ -113,7 +166,7 @@ const MiniCard = ({ title, rightTitle, children }) => (
   <div className="rounded-xl border border-gray-200 bg-white p-6">
     <div className="flex items-start justify-between gap-3">
       <div className="font-semibold text-gray-900">{title}</div>
-      {rightTitle ? (
+      {rightTitle && rightTitle !== "Standard" ? (
         <div className="font-semibold text-gray-900">{rightTitle}</div>
       ) : null}
     </div>
@@ -125,6 +178,11 @@ const TimelineDot = ({ type }) => {
   if (type === "estimate") {
     return (
       <div className="relative z-10 mt-1 h-6 w-6 rounded-full border-2 border-gray-200 bg-white" />
+    );
+  }
+  if (type === "pending") {
+    return (
+      <div className="relative z-10 mt-1 h-6 w-6 rounded-full border-2 border-gray-300 bg-white" />
     );
   }
   return (

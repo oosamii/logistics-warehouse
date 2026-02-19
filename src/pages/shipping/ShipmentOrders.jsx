@@ -1,82 +1,96 @@
 import React from "react";
+import CusTable from "../components/CusTable";
 
-const ShipmentOrders = () => {
-  const rows = [
-    {
-      orderNo: "ORD-10023",
-      shipTo: "New York, NY",
-      cartons: 4,
-      status: "In Transit",
+const ShipmentOrders = ({ shipmentDetails }) => {
+  const salesOrder = shipmentDetails.salesOrder;
+  
+  if (!salesOrder) {
+    return (
+      <div className="rounded-xl border border-gray-200 bg-white p-8 text-center">
+        <p className="text-gray-500">No order information available</p>
+      </div>
+    );
+  }
+
+  // Prepare data for CusTable (as an array with one item)
+  const tableData = [{
+    id: salesOrder.id,
+    order_no: salesOrder.order_no,
+    customer_name: salesOrder.customer_name,
+    cartons: shipmentDetails.cartons,
+    status: salesOrder.status,
+    order_type: salesOrder.order_type || 'STANDARD',
+    // Add any other fields you might need
+  }];
+
+  // Define columns for CusTable
+  const columns = [
+    { 
+      key: "order_no", 
+      title: "Order No",
+      render: (row) => (
+        <button className="font-semibold text-blue-600 hover:text-blue-700">
+          {row.order_no}
+        </button>
+      )
     },
-    {
-      orderNo: "ORD-10045",
-      shipTo: "Boston, MA",
-      cartons: 6,
-      status: "In Transit",
+    { 
+      key: "customer_name", 
+      title: "Customer" 
     },
-    {
-      orderNo: "ORD-10088",
-      shipTo: "Philadelphia, PA",
-      cartons: 2,
-      status: "In Transit",
+    { 
+      key: "cartons", 
+      title: "Cartons" 
     },
+    { 
+      key: "status", 
+      title: "Status",
+      render: (row) => {
+        const statusColors = {
+          SHIPPED: 'bg-green-100 text-green-700',
+          PACKED: 'bg-blue-100 text-blue-700',
+          CREATED: 'bg-gray-100 text-gray-700',
+          PROCESSING: 'bg-yellow-100 text-yellow-700',
+          CANCELLED: 'bg-red-100 text-red-700',
+        };
+        return (
+          <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+            statusColors[row.status] || 'bg-gray-100 text-gray-700'
+          }`}>
+            {row.status}
+          </span>
+        );
+      }
+    },
+    { 
+      key: "order_type", 
+      title: "Order Type" 
+    },
+    // { 
+    //   key: "actions", 
+    //   title: "Actions",
+    //   render: () => (
+    //     <div className="flex justify-end">
+    //       {/* Actions can be added here when needed */}
+    //       <span className="text-gray-400 text-xs">—</span>
+    //     </div>
+    //   )
+    // }
   ];
 
   return (
     <div className="rounded-xl border border-gray-200 bg-white">
       <div className="flex items-center justify-between px-6 py-5">
         <div className="text-lg font-semibold text-gray-900">
-          Orders in Shipment
+          Order in Shipment
         </div>
         <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold text-gray-700">
-          {rows.length} Orders
+          1 Order
         </span>
       </div>
 
       <div className="border-t">
-        <div className="">
-          <table className="w-full min-w-[700px] text-left text-sm">
-            <thead className="bg-gray-50 text-gray-500">
-              <tr>
-                <th className="px-6 py-4 font-medium">Order No</th>
-                <th className="px-6 py-4 font-medium">Ship-to</th>
-                <th className="px-6 py-4 font-medium">Cartons</th>
-                <th className="px-6 py-4 font-medium">Status</th>
-                <th className="px-6 py-4 text-right font-medium">Actions</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {rows.map((r) => (
-                <tr key={r.orderNo}>
-                  <td className="px-6 py-5">
-                    <button className="font-semibold text-blue-600 hover:text-blue-700">
-                      {r.orderNo}
-                    </button>
-                  </td>
-                  <td className="px-6 py-5 text-gray-800">{r.shipTo}</td>
-                  <td className="px-6 py-5 text-gray-800">{r.cartons}</td>
-                  <td className="px-6 py-5">
-                    <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
-                      In Transit
-                    </span>
-                  </td>
-                  <td className="px-6 py-5">
-                    <div className="flex justify-end">
-                      <div className="flex flex-col gap-2">
-                        <button className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50">
-                          Open Order
-                        </button>
-                        <button className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold text-gray-800 hover:bg-gray-50">
-                          View Cartons
-                        </button>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <CusTable columns={columns} data={tableData} />
       </div>
     </div>
   );

@@ -1,17 +1,17 @@
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { ArrowLeft, FileText, MapPin } from "lucide-react";
+import http from "../../api/http";
 
 import ShipmentOverview from "./ShipmentOverview";
 import ShipmentOrders from "./ShipmentOrders";
 import ShipmentCartons from "./ShipmentCartons";
-import ShipmentTracking from "./ShipmentTracking";
 import ShipmentDocuments from "./ShipmentDocuments";
 import ShipmentExceptions from "./ShipmentExceptions";
 import ShipmentAudit from "./ShipmentAudit";
 
 // Optional placeholders (tabs shown in Figma sidebar)
 const Placeholder = ({ title }) => (
-  <div className="rounded-xl border border-gray-200  p-6">
+  <div className="rounded-xl border border-gray-200 p-6">
     <div className="text-lg font-semibold text-gray-900">{title}</div>
     <div className="mt-2 text-sm text-gray-500">
       UI only. API integration pending.
@@ -19,42 +19,126 @@ const Placeholder = ({ title }) => (
   </div>
 );
 
-const ShipmentDetail = ({ shipmentId = "SHP-2024-9901", onBack }) => {
+const ShipmentDetail = ({ shipmentId, onBack }) => {
   const [activeSection, setActiveSection] = useState("overview");
+  const [shipmentData, setShipmentData] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  const shipmentDetails = useMemo(
-    () => ({
-      id: shipmentId,
-      status: "In Transit",
-      warehouse: "WH-NYC-01",
-      client: "Acme Corp",
-      carrier: "FedEx Express",
-      service: "Standard",
-      awb: "789456123012",
-      dispatchTime: "Oct 24, 2024 14:30",
-      orders: 3,
-      cartons: 12,
-      exceptionsCount: 0,
-    }),
-    [shipmentId],
-  );
+  // Fetch shipment details
+  useEffect(() => {
+    const fetchShipmentDetails = async () => {
+      if (!shipmentId) return;
+      
+      setLoading(true);
+      setError(null);
+      
+      try {
+        const response = await http.get(`/shipping/${shipmentId}`);
+        if (response.data.success) {
+          setShipmentData(response.data.data);
+        }
+      } catch (err) {
+        console.error("Error fetching shipment details:", err);
+        setError("Failed to load shipment details");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchShipmentDetails();
+  }, [shipmentId]);
+
+  const shipmentDetails = useMemo(() => {
+    if (!shipmentData) return null;
+
+    // Format status for display
+    const formatStatus = (status) => {
+      return status.charAt(0) + status.slice(1).toLowerCase().replace('_', ' ');
+    };
+
+    // Format date for display
+    const formatDate = (dateString) => {
+      if (!dateString) return "N/A";
+      return new Date(dateString).toLocaleString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit'
+      });
+    };
+
+    return {
+      id: shipmentData.shipment_no,
+      rawId: shipmentData.id,
+      status: formatStatus(shipmentData.status),
+      rawStatus: shipmentData.status,
+      warehouse: shipmentData.warehouse?.warehouse_name || "N/A",
+      client: shipmentData.SalesOrder?.customer_name || "N/A",
+      carrier: shipmentData.Carrier?.carrier_name || "N/A",
+      carrierDetails: shipmentData.Carrier,
+      service: shipmentData.shipping_method || "Standard",
+      awb: shipmentData.awb_no || "N/A",
+      dispatchTime: formatDate(shipmentData.dispatched_at) || formatDate(shipmentData.createdAt),
+      orders: 1, // Each shipment is linked to one sales order
+      cartons: shipmentData.total_cartons || 0,
+      exceptionsCount: 0, // You'll need to implement exceptions tracking
+      shipToName: shipmentData.ship_to_name,
+      shipToAddress: `${shipmentData.ship_to_address}, ${shipmentData.ship_to_city}, ${shipmentData.ship_to_state} - ${shipmentData.ship_to_pincode}`,
+      shipToPhone: shipmentData.ship_to_phone,
+      estimatedDelivery: formatDate(shipmentData.estimated_delivery_date),
+      notes: shipmentData.notes,
+      salesOrder: shipmentData.SalesOrder,
+      cartonsData: shipmentData.SalesOrder?.cartons || [],
+      totalWeight: shipmentData.total_weight,
+      shippingCost: shipmentData.shipping_cost,
+      createdAt: formatDate(shipmentData.createdAt),
+      updatedAt: formatDate(shipmentData.updatedAt),
+    };
+  }, [shipmentData]);
 
   const sections = [
     { id: "overview", label: "Overview", component: ShipmentOverview },
     { id: "orders", label: "Orders", component: ShipmentOrders },
     { id: "cartons", label: "Cartons", component: ShipmentCartons },
-    { id: "tracking", label: "Tracking", component: ShipmentTracking },
     { id: "documents", label: "Documents", component: ShipmentDocuments },
     { id: "exceptions", label: "Exceptions", component: ShipmentExceptions },
     { id: "audit", label: "Audit", component: ShipmentAudit },
   ];
 
   const ActiveComponent = sections.find(
-    (s) => s.id === activeSection,
+    (s) => s.id === activeSection
   )?.component;
 
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (error || !shipmentDetails) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 text-xl mb-4">⚠️ Error</div>
+          <div className="text-gray-600">{error || "Shipment not found"}</div>
+          <button
+            onClick={onBack}
+            className="mt-4 inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50"
+          >
+            <ArrowLeft size={16} />
+            Go Back
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
-    <div className="min-h-screen ">
+    <div className="min-h-screen">
       <div className="mx-auto max-w-7xl px-6 py-6">
         {/* Breadcrumbs */}
         <div className="text-sm text-gray-500">
@@ -94,7 +178,12 @@ const ShipmentDetail = ({ shipmentId = "SHP-2024-9901", onBack }) => {
                 <div className="text-2xl font-bold text-gray-900">
                   {shipmentDetails.id}
                 </div>
-                <span className="rounded-full bg-blue-100 px-3 py-1 text-xs font-semibold text-blue-700">
+                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                  shipmentDetails.rawStatus === 'DISPATCHED' ? 'bg-amber-100 text-amber-700' :
+                  shipmentDetails.rawStatus === 'CREATED' ? 'bg-gray-100 text-gray-700' :
+                  shipmentDetails.rawStatus === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-700' :
+                  'bg-green-100 text-green-700'
+                }`}>
                   {shipmentDetails.status}
                 </span>
               </div>
@@ -118,10 +207,16 @@ const ShipmentDetail = ({ shipmentId = "SHP-2024-9901", onBack }) => {
               <div className="mt-5">
                 <div className="text-sm text-gray-500">Content</div>
                 <div className="mt-1 font-semibold text-gray-900">
-                  {shipmentDetails.orders} Orders / {shipmentDetails.cartons}{" "}
-                  Cartons
+                  {shipmentDetails.orders} Order / {shipmentDetails.cartons} Cartons
                 </div>
               </div>
+
+              {shipmentDetails.notes && (
+                <div className="mt-3">
+                  <div className="text-sm text-gray-500">Notes</div>
+                  <div className="mt-1 text-gray-900">{shipmentDetails.notes}</div>
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3">
@@ -186,7 +281,7 @@ const SidebarItem = ({ label, active, badge, onClick }) => (
   >
     <span className="flex items-center gap-2">
       {label}
-      {typeof badge === "number" && (
+      {typeof badge === "number" && badge > 0 && (
         <span
           className={`ml-2 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1 text-xs font-semibold ${
             active ? "bg-white/20 text-white" : "bg-gray-100 text-gray-700"
