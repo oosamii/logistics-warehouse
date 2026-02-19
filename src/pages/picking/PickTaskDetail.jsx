@@ -405,7 +405,7 @@ const PickTaskDetail = () => {
   return (
     <FormPage
       breadcrumbs={[
-        { label: "Outbound", to: "/picking?tab=tasks" },
+        { label: "Packing", to: "/picking?tab=tasks" },
         { label: "Pick Task Detail" },
       ]}
       title={`Pick Task ${mappedTask.taskNo}`}
@@ -460,6 +460,12 @@ const PickTaskDetail = () => {
               Start Task
             </button>
           )}
+          <button
+            onClick={() => navigate(-1)}
+            className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 disabled:opacity-50"
+          >
+            Go Back
+          </button>
         </>
       }
       bottomRight={
@@ -473,13 +479,13 @@ const PickTaskDetail = () => {
               Complete
             </button>
 
-            <button
+            {/* <button
               onClick={openRaiseException}
               disabled={submitting}
               className="border border-red-300 text-red-700 px-4 py-2 rounded-md"
             >
               Raise Exception
-            </button>
+            </button> */}
 
             <button
               onClick={openPartialPick}

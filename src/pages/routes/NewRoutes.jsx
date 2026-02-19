@@ -37,6 +37,7 @@ import StockBySkuTab from "../inventory/components/tabs/stockBySku/StockBySkuTab
 import SkuDetailPage from "../inventory/components/SkuDetailPage";
 import PickWaveDetails from "../picking/PickWaveDetails";
 import CreatePickWavePage from "../picking/components/CreatePickWavePage";
+import PackOrderDetail from "../packing/PackOrderDetail";
 
 const protect = (path, element) => {
   const rule = ROUTE_PERMS[path];
@@ -142,6 +143,10 @@ const NewRoutes = [
     element: protect("/picking/createPickWavePage", <CreatePickWavePage />),
   },
   { path: "/packing", element: protect("/packing", <Packing />) },
+  {
+    path: "/packing/orderId/:id",
+    element: protect("/packing/orderId/:id", <PackOrderDetail />),
+  },
   { path: "/shipping", element: protect("/shipping", <Shipping />) },
   {
     path: "/shippingdetails",
