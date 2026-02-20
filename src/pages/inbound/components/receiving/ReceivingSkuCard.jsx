@@ -10,7 +10,7 @@ const ReceivingSkuCard = ({
   selectedPalletId,
   setSelectedPalletId,
 
-  onCreatePallet, 
+  onCreatePallet,
   allowPalletCreate = true,
   palletType,
   setPalletType,
@@ -70,7 +70,7 @@ const ReceivingSkuCard = ({
           <button
             type="button"
             onClick={onCancel}
-            className="shrink-0 text-xs text-red-600 hover:underline"
+            className="shrink-0 bg-red-500 px-2 py-1 text-xs text-white rounded-md hover:underline"
           >
             Cancel
           </button>

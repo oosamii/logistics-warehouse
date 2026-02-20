@@ -10,6 +10,9 @@ import { useNavigate } from "react-router-dom";
 import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal";
 import { useToast } from "../components/toast/ToastProvider";
 import http from "../../api/http";
+import { getUserRole } from "../utils/authStorage";
+import { useAccess } from "../utils/useAccess";
+import { getAsnActionLabel, handleAsnNavigation } from "./components/helper";
 
 const InboundASN = () => {
   const [selectedRows, setSelectedRows] = useState([]);
@@ -26,13 +29,13 @@ const InboundASN = () => {
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
     total: 0,
-    dueToday: 0,
+    closed: 0,
     inReceiving: 0,
     putawayPending: 0,
-    closed: 0,
+    grnPosted: 0,
+    confirmed: 0,
   });
 
-  // Filters state
   const [filterValues, setFilterValues] = useState({
     timePeriod: "Today",
     warehouse: "All",
@@ -47,10 +50,40 @@ const InboundASN = () => {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [deleting, setDeleting] = useState(false);
 
-  // Fetch ASN data
-  useEffect(() => {
-    fetchASNData();
-  }, []);
+  const roleCode = getUserRole();
+  const isAdmin = roleCode === "ADMIN";
+  const access = useAccess("INBOUND");
+  const canCreate = isAdmin || access.canCreate;
+  const canUpdate = isAdmin || access.canUpdate;
+  const canDelete = isAdmin || access.canDelete;
+  const showActionsColumn = canUpdate || canDelete;
+
+  const fetchASNStats = async (warehouseId = 1) => {
+    try {
+      const res = await http.get(`/asns/stats?warehouse_id=${warehouseId}`);
+
+      if (res.data.success) {
+        const data = res.data.data;
+        setStats({
+          total:
+            (data.CLOSED || 0) +
+            (data.IN_RECEIVING || 0) +
+            (data.GRN_POSTED || 0) +
+            (data.PUTAWAY_PENDING || 0) +
+            (data.CONFIRMED || 0),
+
+          closed: data.CLOSED || 0,
+          inReceiving: data.IN_RECEIVING || 0,
+          putawayPending: data.PUTAWAY_PENDING || 0,
+          grnPosted: data.GRN_POSTED || 0,
+          confirmed: data.CONFIRMED || 0,
+        });
+      }
+    } catch (error) {
+      console.error("Stats fetch error:", error);
+      toast.error("Failed to load ASN stats");
+    }
+  };
 
   const fetchASNData = async (page = 1) => {
     try {
@@ -62,7 +95,7 @@ const InboundASN = () => {
       if (response.data.success) {
         setAsnData(response.data.data.asns);
         setPagination(response.data.data.pagination);
-        calculateStats(response.data.data.asns);
+        // calculateStats(response.data.data.asns);
       }
     } catch (error) {
       console.error("Error fetching ASN data:", error);
@@ -72,44 +105,11 @@ const InboundASN = () => {
     }
   };
 
-  // Calculate statistics from ASN data
-  const calculateStats = (asns) => {
-    const today = new Date().toISOString().split("T")[0];
-    let dueTodayCount = 0;
-    let inReceivingCount = 0;
-    let putawayPendingCount = 0;
-    let closedCount = 0;
+  useEffect(() => {
+    fetchASNData();
+    fetchASNStats();
+  }, []);
 
-    asns.forEach((asn) => {
-      const etaDate = new Date(asn.eta).toISOString().split("T")[0];
-
-      if (etaDate === today) {
-        dueTodayCount++;
-      }
-
-      switch (asn.status) {
-        case "IN_RECEIVING":
-          inReceivingCount++;
-          break;
-        case "POSTED":
-          putawayPendingCount++;
-          break;
-        case "CLOSED":
-          closedCount++;
-          break;
-      }
-    });
-
-    setStats({
-      total: asns.length,
-      dueToday: dueTodayCount,
-      inReceiving: inReceivingCount,
-      putawayPending: putawayPendingCount,
-      closed: closedCount,
-    });
-  };
-
-  // Format date for display
   const formatDate = (dateString) => {
     if (!dateString) return "-";
 
@@ -132,7 +132,6 @@ const InboundASN = () => {
     }
   };
 
-  // Format status for display
   const formatStatus = (status) => {
     const statusMap = {
       DRAFT: "Draft",
@@ -146,7 +145,6 @@ const InboundASN = () => {
     return statusMap[status] || status;
   };
 
-  // Get status badge color
   const getStatusBadgeColor = (status) => {
     const colorMap = {
       DRAFT: "bg-gray-100 text-gray-800",
@@ -185,7 +183,6 @@ const InboundASN = () => {
     }
   };
 
-  // Filters configuration
   const filters = [
     {
       key: "timePeriod",
@@ -263,7 +260,6 @@ const InboundASN = () => {
     },
   ];
 
-  // Apply filters to data
   const filteredData = useMemo(() => {
     return asnData.filter((asn) => {
       // Search filter
@@ -328,7 +324,6 @@ const InboundASN = () => {
     });
   }, [asnData, filterValues]);
 
-  // Table columns
   const columns = useMemo(
     () => [
       {
@@ -360,7 +355,7 @@ const InboundASN = () => {
         render: (row) => (
           <button
             className="text-blue-600 hover:underline"
-            onClick={() => navigate(`/ASNdetails/${row.id}`)}
+            onClick={() => navigate(`/inbound/ASNdetails/${row.id}`)}
           >
             {row.asn_no}
           </button>
@@ -432,33 +427,13 @@ const InboundASN = () => {
           <div className="flex items-center gap-3">
             <button
               className="text-blue-600 hover:underline text-sm"
-              onClick={() => {
-                if (row.status === "DRAFT") {
-                  navigate(`/createASN/${row.id}`, {
-                    state: { asn: row },
-                  });
-                } else if (row.status === "IN_RECEIVING") {
-                  navigate(`/ASNreceive/${row.asn_no}`, {
-                    state: { asnData: row },
-                  });
-                } else if (row.status === "POSTED") {
-                  navigate(`/grn/${row.id}`);
-                } else {
-                  navigate(`/ASNdetails/${row.id}`);
-                }
-              }}
+              onClick={() => handleAsnNavigation(row, navigate)}
             >
-              {row.status === "IN_RECEIVING"
-                ? "Resume"
-                : row.status === "POSTED"
-                  ? "View GRN"
-                  : row.status === "DRAFT"
-                    ? "Edit"
-                    : "View"}
+              {getAsnActionLabel(row)}
             </button>
             <button
               className="text-gray-500 hover:text-gray-700"
-              onClick={() => navigate(`/ASNdetails/${row.id}`)}
+              onClick={() => navigate(`/inbound/ASNdetails/${row.id}`)}
             >
               <MoreHorizontal size={16} />
             </button>
@@ -469,12 +444,10 @@ const InboundASN = () => {
     [filteredData, selectedRows],
   );
 
-  // Handle pagination
   const handlePageChange = (newPage) => {
     fetchASNData(newPage);
   };
 
-  // Handle bulk actions
   const handleBulkConfirm = async () => {
     try {
       await Promise.all(
@@ -487,7 +460,7 @@ const InboundASN = () => {
       toast.error("Failed to confirm ASNs");
     }
   };
-
+  const currentCount = filteredData.length;
   return (
     <div className="max-w-full">
       <PageHeader
@@ -501,23 +474,18 @@ const InboundASN = () => {
             >
               Export
             </button>
-            <button
-              onClick={() => toast.info("GRN receiving feature coming soon!")}
-              className="px-4 py-2 border rounded-md text-sm bg-white w-full sm:w-auto"
-            >
-              Receive GRN
-            </button>
-            <button
-              onClick={() => navigate("/createASN/new")}
-              className="px-4 py-2 rounded-md text-sm bg-primary text-white w-full sm:w-auto"
-            >
-              + Create ASN
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => navigate("/createASN/new")}
+                className="px-4 py-2 rounded-md text-sm bg-primary text-white w-full sm:w-auto"
+              >
+                + Create ASN
+              </button>
+            )}
           </>
         }
       />
 
-      {/* Filter Bar */}
       <FilterBar
         filters={filters}
         onFilterChange={(key, val) =>
@@ -535,12 +503,10 @@ const InboundASN = () => {
           })
         }
         onApply={() => {
-          // Filters are applied automatically through filteredData
           toast.info("Filters applied");
         }}
       />
 
-      {/* Statistics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4 mt-4">
         <StatCard
           title="Total ASNs"
@@ -548,14 +514,19 @@ const InboundASN = () => {
           accentColor="#3B82F6"
         />
         <StatCard
-          title="Due Today"
-          value={stats.dueToday}
-          accentColor="#F59E0B"
+          title="Confirmed"
+          value={stats.confirmed}
+          accentColor="#2563EB"
         />
         <StatCard
           title="In Receiving"
           value={stats.inReceiving}
           accentColor="#F59E0B"
+        />
+        <StatCard
+          title="GRN Posted"
+          value={stats.grnPosted}
+          accentColor="#8B5CF6"
         />
         <StatCard
           title="Putaway Pending"
@@ -619,17 +590,11 @@ const InboundASN = () => {
         ) : (
           <>
             <CusTable columns={columns} data={filteredData} />
-
             {/* Pagination */}
             {pagination.pages > 1 && (
               <div className="flex justify-between items-center mt-4 px-4 py-3 border-t border-gray-200">
                 <div className="text-sm text-gray-700">
-                  Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
-                  {Math.min(
-                    pagination.page * pagination.limit,
-                    pagination.total,
-                  )}{" "}
-                  of {pagination.total} entries
+                  Showing {currentCount} of {pagination.total} Entries
                 </div>
                 <div className="flex gap-2">
                   <button

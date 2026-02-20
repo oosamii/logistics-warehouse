@@ -375,7 +375,7 @@ const AsnDetail = () => {
             {asnData.status === "IN_RECEIVING" && (
               <button
                 onClick={() =>
-                  navigate(`/ASNreceive/${asnData.asn_no}`, {
+                  navigate(`/inbound/ASN/ASNreceive/${asnData.asn_no}`, {
                     state: { asnData: asnData },
                   })
                 }

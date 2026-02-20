@@ -53,8 +53,7 @@ const Login = () => {
         toast.error(message || "Login failed");
       }
     } catch (error) {
-      const errMsg =
-        error?.response?.data?.message || "Invalid email or password";
+      const errMsg = error?.response?.data?.message || "Login failed";
 
       toast.error(errMsg);
     } finally {

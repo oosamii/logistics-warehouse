@@ -148,7 +148,9 @@ const AsnReceiving = () => {
             }}
           >
             <div className="min-w-0">
-              <div className="text-sm font-medium text-gray-900">{row.sku}</div>
+              <div className="text-sm text-blue-500 font-medium hover:underline">
+                {row.sku}
+              </div>
               <div className="text-xs text-gray-500 truncate">
                 {row.skuDesc}
               </div>
@@ -326,7 +328,7 @@ const AsnReceiving = () => {
         hideFooter
         breadcrumbs={[
           { label: "Inbound", to: "/inbound" },
-          { label: "ASN", to: `/ASNdetails/${asn?.id}` },
+          { label: "ASN", to: `/inbound/ASNdetails/${asn?.id}` },
           { label: "Receiving" },
         ]}
         title={`ASN Receiving ${asn?.asn_no ? `- ${asn.asn_no}` : ""}`}

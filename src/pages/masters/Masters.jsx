@@ -34,8 +34,7 @@ const TAB_CONFIG = [
   { key: "Warehouses", module: "WAREHOUSE", Component: WarehouseTab },
   { key: "Suppliers", module: "SUPPLIERS", Component: SupplierTab },
   { key: "Docks", module: "DOCKS", Component: DockTab },
-    { key: "Carriers", module: "CARRIERS", Component: CarrierTab },
-
+  { key: "Carriers", module: "CARRIERS", Component: CarrierTab },
 ];
 
 const Masters = () => {
