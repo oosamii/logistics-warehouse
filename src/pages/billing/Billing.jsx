@@ -8,11 +8,14 @@ import RateCards from "./RateCards";
 import RunBillingModal from "./RunBillingModal";
 import InvoiceDetail from "./InvoiceDetail";
 import { Download, Plus, Play } from "lucide-react";
+import CreateManualChargeModal from "./components/CreateManualChargeModal";
 
 const Billing = () => {
   const [activeTab, setActiveTab] = useState("billableEvents");
   const [showRunBillingModal, setShowRunBillingModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState(null);
+
+  const [showManualChargeModal, setShowManualChargeModal] = useState(false);
 
   // Tabs configuration
   const tabs = [
@@ -53,10 +56,22 @@ const Billing = () => {
           <Download size={16} />
           Export
         </button>
-        <button className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+        <button
+          onClick={() => setShowManualChargeModal(true)}
+          className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700"
+        >
           <Plus size={16} />
           Create Manual Charge
         </button>
+        <CreateManualChargeModal
+          isOpen={showManualChargeModal}
+          onClose={() => setShowManualChargeModal(false)}
+          onSuccess={() => {
+            // optional: refresh current tab list
+            // e.g. trigger a re-fetch in BillableEvents via a state key
+            console.log("Manual charge created");
+          }}
+        />
         <button
           onClick={() => setShowRunBillingModal(true)}
           className="flex items-center gap-2 rounded-md bg-green-600 px-4 py-2 text-sm font-medium text-white hover:bg-green-700"

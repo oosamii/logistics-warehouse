@@ -274,7 +274,7 @@ const Putaway = () => {
       status === "IN_PROGRESS" ||
       status === "COMPLETED"
     ) {
-      navigate(`/putawaydetails/${task.id}`, { state: { task } });
+      navigate(`/putaway/putawaydetails/${task.id}`, { state: { task } });
     }
   };
 
@@ -317,7 +317,7 @@ const Putaway = () => {
   };
 
   const handleViewTask = (task) => {
-    navigate(`/putawaydetails/${task.id}`, { state: { task } });
+    navigate(`/putaway/putawaydetails/${task.id}`, { state: { task } });
   };
 
   const handleBulkAssign = () => {
@@ -678,19 +678,25 @@ const Putaway = () => {
         subtitle="Move received stock from dock to storage locations"
         actions={
           <>
-            <button
-              onClick={() => toast.info("Export feature coming soon!")}
-              className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
-            >
-              Export
-            </button>
-            <button
-              onClick={handleBulkAssign}
-              disabled={selectedIds.length === 0}
-              className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 transition-colors"
-            >
-              Assign Tasks
-            </button>
+            <div>
+              <button
+                onClick={() => toast.info("Export feature coming soon!")}
+                className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
+              >
+                Export
+              </button>
+              <p className="text-gray-500 text-xs"></p>
+            </div>
+            <div>
+              <button
+                onClick={handleBulkAssign}
+                disabled={selectedIds.length === 0}
+                className="rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700 transition-colors"
+              >
+                Assign Tasks
+              </button>
+              <p className="text-gray-500 text-xs px-2">Note:Select GRN</p>
+            </div>
           </>
         }
       />

@@ -72,8 +72,8 @@ const NewRoutes = [
     element: protect("/putaway", <Putaway />),
   },
   {
-    path: "/putawaydetails/:id", // Add :id parameter here
-    element: protect("/putawaydetails/:id", <PutawayDetails />),
+    path: "/putaway/putawaydetails/:id", // Add :id parameter here
+    element: protect("/putaway/putawaydetails/:id", <PutawayDetails />),
   },
 
   { path: "/inbound", element: protect("/inbound", <InboundASN />) },

@@ -8,11 +8,22 @@ import Pagination from "../components/Pagination";
 import { useNavigate } from "react-router-dom";
 import { useToast } from "../components/toast/ToastProvider";
 import { useSalesOrders } from "./components/useSalesOrders";
+import { getUserRole } from "../utils/authStorage";
+import { useAccess } from "../utils/useAccess";
+import { getOrderActionLabel } from "../inbound/components/helper";
 
 const OutboundOrders = () => {
   const navigate = useNavigate();
   const toast = useToast();
   const [selectedRows, setSelectedRows] = useState([]);
+
+  const roleCode = getUserRole();
+  const isAdmin = roleCode === "ADMIN";
+  const access = useAccess("CARRIERS");
+  const canCreate = isAdmin || access.canCreate;
+  const canUpdate = isAdmin || access.canUpdate;
+  const canDelete = isAdmin || access.canDelete;
+  const showActionsColumn = canUpdate || canDelete;
 
   const {
     loading,
@@ -346,12 +357,13 @@ const OutboundOrders = () => {
         key: "actions",
         title: "Actions",
         render: (row) => {
-          let actionLabel = "View";
-          if (row.status === "DRAFT") actionLabel = "Edit";
-          if (row.status === "CONFIRMED") actionLabel = "Allocate";
-          if (row.status === "ALLOCATED") actionLabel = "Pick";
-          if (row.status === "PICKED") actionLabel = "Pack";
-          if (row.status === "PACKED") actionLabel = "Ship";
+          // let actionLabel = "View";
+          // if (row.status === "DRAFT") actionLabel = "Edit";
+          // if (row.status === "CONFIRMED") actionLabel = "Allocate";
+          // if (row.status === "ALLOCATED") actionLabel = "Pick";
+          // if (row.status === "PICKED") actionLabel = "Pack";
+          // if (row.status === "PACKED") actionLabel = "Ship";
+          const actionLabel = getOrderActionLabel(row.status, canUpdate);
 
           return (
             <div className="flex items-center justify-end gap-2">
@@ -388,12 +400,14 @@ const OutboundOrders = () => {
             <button className="px-4 py-2 border rounded-md text-sm bg-white">
               Bulk Allocate
             </button>
-            <button
-              onClick={() => navigate("/outbound/saleOrderCreate/new")}
-              className="px-4 py-2 rounded-md text-sm bg-blue-600 text-white"
-            >
-              + Create Sales Order
-            </button>
+            {canCreate && (
+              <button
+                onClick={() => navigate("/outbound/saleOrderCreate/new")}
+                className="px-4 py-2 rounded-md text-sm bg-blue-600 text-white"
+              >
+                + Create Sales Order
+              </button>
+            )}
           </>
         }
       />

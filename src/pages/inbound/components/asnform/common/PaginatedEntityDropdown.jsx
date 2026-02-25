@@ -13,8 +13,7 @@ const PaginatedEntityDropdown = ({
   disabled = false,
   renderItem,
 
-  // ✅ NEW
-  query = {}, // extra query params like { client_id: 1 }
+  query = {},
   enableSearch = false,
   searchParam = "search",
   searchPlaceholder = "Search…",
@@ -30,7 +29,6 @@ const PaginatedEntityDropdown = ({
     limit,
   });
 
-  // ✅ NEW
   const [search, setSearch] = useState("");
   const [hasFetched, setHasFetched] = useState(false);
 
@@ -43,11 +41,9 @@ const PaginatedEntityDropdown = ({
     const fetchSelected = async () => {
       try {
         const qs = new URLSearchParams();
-        // handle single value or array of IDs
         const ids = Array.isArray(value) ? value.join(",") : value;
-        qs.set("id", ids); // fetch by ID(s)
+        qs.set("id", ids);
 
-        // include any extra query params
         Object.entries(query || {}).forEach(([k, v]) => {
           if (v != null && v !== "") qs.set(k, String(v));
         });
@@ -70,7 +66,6 @@ const PaginatedEntityDropdown = ({
     fetchSelected();
   }, [value, endpoint, JSON.stringify(query)]);
 
-  // close on outside click
   useEffect(() => {
     const onDocClick = (e) => {
       if (!wrapRef.current) return;
@@ -135,7 +130,7 @@ const PaginatedEntityDropdown = ({
 
   useEffect(() => {
     if (!open) return;
-    if (hasFetched) return; // already loaded, skip
+    if (hasFetched) return;
 
     loadPage(1).then(() => setHasFetched(true));
   }, [open]);

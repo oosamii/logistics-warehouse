@@ -240,7 +240,6 @@ const PutawayDetails = () => {
     toast.success("SKU verified successfully!");
   };
 
-  // Handle quantity changes
   const handleGoodQtyChange = (value) => {
     const numericValue = parseInt(value) || 0;
     const totalQty = task?.qty || 0;
@@ -265,7 +264,6 @@ const PutawayDetails = () => {
     }
   };
 
-  // Calculate remaining quantity
   const calculateRemainingQty = () => {
     if (!task) return 0;
     const totalQty = task.qty || 0;
@@ -273,7 +271,6 @@ const PutawayDetails = () => {
     return Math.max(0, totalQty - allocatedQty);
   };
 
-  // Save draft
   const handleSaveDraft = async () => {
     try {
       setSaving(true);
@@ -295,173 +292,6 @@ const PutawayDetails = () => {
       setSaving(false);
     }
   };
-
-  // Complete task - FIXED VERSION
-  // const handleCompleteTask = async () => {
-  //   console.log("=== Starting complete task for Task ID:", id, "===");
-
-  //   try {
-  //     // STEP 1: First fetch fresh task data
-  //     console.log("Fetching fresh task data...");
-  //     const freshTaskResponse = await http.get(`/grn-lines/${id}`);
-
-  //     if (!freshTaskResponse.data.success) {
-  //       toast.error("Failed to fetch task data");
-  //       return;
-  //     }
-
-  //     const freshTask = freshTaskResponse.data.data;
-  //     console.log(freshTask);
-
-  //     if (freshTask.putaway_status === "COMPLETED") {
-  //       toast.error(`Task ${freshTask.pt_task_id} is already completed`);
-  //       setTask(freshTask);
-  //       return;
-  //     }
-
-  //     if (
-  //       freshTask.grn?.status === "CLOSED" ||
-  //       freshTask.grn?.status === "COMPLETED"
-  //     ) {
-  //       toast.error(
-  //         `GRN ${freshTask.grn?.grn_no} is already closed. Cannot complete individual tasks.`,
-  //       );
-  //       setTask(freshTask);
-  //       return;
-  //     }
-
-  //     if (freshTask.putaway_status === "PENDING") {
-  //       toast.error("Task must be assigned before completion");
-  //       setTask(freshTask);
-  //       return;
-  //     }
-
-  //     if (!freshTask.assigned_to) {
-  //       toast.error("Task must be assigned to a user");
-  //       setTask(freshTask);
-  //       return;
-  //     }
-
-  //     if (!freshTask.destination_location_id) {
-  //       toast.error("Destination location must be assigned");
-  //       setTask(freshTask);
-  //       return;
-  //     }
-
-  //     // STEP 5: Validate quantities
-  //     const remainingQty = calculateRemainingQty();
-  //     if (remainingQty > 0) {
-  //       toast.error(
-  //         `Please allocate all ${freshTask.qty} units. Remaining: ${remainingQty}`,
-  //       );
-  //       return;
-  //     }
-
-  //     if (!scanSku || scanSku !== freshTask.sku?.sku_code) {
-  //       toast.error("Please scan and verify the SKU");
-  //       return;
-  //     }
-
-  //     setConfirmData({
-  //       pt_task_id: freshTask.pt_task_id,
-  //       grn_no: freshTask.grn?.grn_no,
-  //       qty: freshTask.qty,
-  //       sku_name: freshTask.sku?.sku_name,
-  //       destination_code: freshTask.destination_location?.location_code,
-  //     });
-
-  //     setConfirmOpen(true);
-  //     return;
-
-  //     setCompleting(true);
-
-  //     // STEP 7: Check GRN status separately before attempting completion
-  //     console.log("Checking GRN status...");
-  //     const grnCheckResponse = await http.get(`/grns/${freshTask.grn_id}`);
-
-  //     if (grnCheckResponse.data.success) {
-  //       const grnData = grnCheckResponse.data.data;
-  //       if (grnData.status === "CLOSED" || grnData.status === "COMPLETED") {
-  //         toast.error(
-  //           `GRN ${grnData.grn_no} is already ${grnData.status}. Cannot add more putaway tasks.`,
-  //         );
-  //         setCompleting(false);
-  //         return;
-  //       }
-  //     }
-
-  //     // STEP 8: Prepare payload for THIS SPECIFIC TASK (ID 7)
-  //     const payload = {
-  //       line_id: parseInt(id), // This should be 7
-  //       good_qty: parseInt(goodQty),
-  //       damaged_qty: parseInt(holdQty),
-  //       destination_location: parseInt(freshTask.destination_location_id),
-  //       scanned_sku: scanSku,
-  //     };
-
-  //     // STEP 9: Make API call
-  //     const response = await http.post(
-  //       `/grns/${freshTask?.id}/complete-putaway`,
-  //     );
-
-  //     console.log("Completion response:", response.data);
-
-  //     if (response.data.success) {
-  //       toast.success(`Task ${freshTask.pt_task_id} completed successfully!`);
-
-  //       // Update local state
-  //       setTask((prev) => ({
-  //         ...prev,
-  //         putaway_status: "COMPLETED",
-  //         putaway_completed_at: new Date().toISOString(),
-  //       }));
-
-  //       //Inventory: 14 on hand, 14 available
-  //       if (response.data.data?.inventory) {
-  //         const inventory = response.data.data.inventory;
-  //         toast.info(
-  //           `Inventory: ${inventory.on_hand_qty} on hand, ${inventory.available_qty} available`,
-  //         );
-  //       }
-
-  //       // Navigate after delay
-  //       setTimeout(() => {
-  //         navigate("/putaway");
-  //       }, 2000);
-  //     } else {
-  //       toast.error(response.data.message || "Failed to complete task");
-  //     }
-  //   } catch (error) {
-  //     console.error("Error completing task:", error);
-
-  //     // Handle specific error for GRN already completed
-  //     if (
-  //       error.response?.data?.message === "Putaway task already completed" ||
-  //       error.response?.data?.message?.includes("already completed")
-  //     ) {
-  //       // This means the GRN (GRN ID 5) is already completed
-  //       toast.error(
-  //         `GRN ${task?.grn?.grn_no} is already completed. All tasks under it are marked as completed.`,
-  //       );
-
-  //       // Force fetch the latest task data
-  //       try {
-  //         const latestTask = await http.get(`/grn-lines/${id}`);
-  //         if (latestTask.data.success) {
-  //           setTask(latestTask.data.data);
-  //         }
-  //       } catch (refreshError) {
-  //         console.error("Failed to refresh:", refreshError);
-  //       }
-  //     } else if (error.response?.data?.message) {
-  //       toast.error(error.response.data.message);
-  //     } else {
-  //       toast.error("Failed to complete task");
-  //     }
-  //   } finally {
-  //     setCompleting(false);
-  //   }
-  // };
 
   const handleCompleteTask = async () => {
     console.log("=== Starting complete task for Task ID:", id, "===");
@@ -606,17 +436,15 @@ const PutawayDetails = () => {
     try {
       console.log("Starting task with ID:", id);
 
-      // Update task status to IN_PROGRESS
       const payload = {
         status: "IN_PROGRESS",
       };
-      // /grn-lines/start-putaway/12
-      // const response = await http.put(`/grn-lines/${id}/status`, payload);
+
       const response = await http.post(`/grn-lines/start-putaway/${id}`);
 
       if (response.data.success) {
         toast.success("Putaway task started!");
-        fetchTaskData(); // Refresh data
+        fetchTaskData();
       } else {
         toast.error(response.data.message || "Failed to start task");
       }

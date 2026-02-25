@@ -429,8 +429,9 @@ const InboundASN = () => {
               className="text-blue-600 hover:underline text-sm"
               onClick={() => handleAsnNavigation(row, navigate)}
             >
-              {getAsnActionLabel(row)}
+              {getAsnActionLabel(row, canUpdate)}
             </button>
+
             <button
               className="text-gray-500 hover:text-gray-700"
               onClick={() => navigate(`/inbound/ASNdetails/${row.id}`)}

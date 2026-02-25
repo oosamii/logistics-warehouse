@@ -168,7 +168,7 @@ const PackingReady = ({ onOrderSelect }) => {
       title: "Order No",
       render: (r) => (
         <button
-          onClick={() => onOrderSelect?.(r.orderNo)}
+          onClick={() => onOrderSelect?.(r.id)}
           className="font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left"
         >
           {r.orderNo}
