@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import http from "../../api/http";
+import http from "../../../api/http";
 import {
   ArrowLeft,
   Eye,
@@ -216,7 +216,7 @@ const BillableEventDetail = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gray-50">
-        <div className="mx-auto max-w-6xl px-5 py-14">
+        <div className="mx-auto  px-5 py-14">
           <div className="flex flex-col items-center gap-3 text-sm text-gray-500">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-gray-200 border-t-gray-600" />
             Loading event details…
@@ -262,8 +262,8 @@ const BillableEventDetail = () => {
   const isBlocked = event.status === "BLOCKED";
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-6xl px-5 pb-16 pt-7 space-y-4">
+    <div className="min-h-screen">
+      <div className="px-6 pb-16 pt-7 space-y-4">
         {/* Back */}
         <button
           onClick={() => navigate(-1)}
@@ -297,7 +297,12 @@ const BillableEventDetail = () => {
                 <Zap size={14} /> Fix Rate Card
               </button>
             ) : (
-              <button className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50">
+              <button
+                onClick={() =>
+                  navigate(`/billing/invoices/${event?.invoice_id || ""}`)
+                }
+                className="inline-flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-5 py-2.5 text-sm font-semibold text-gray-700 hover:bg-gray-50"
+              >
                 <Eye size={14} /> View Invoice
               </button>
             )}

@@ -19,6 +19,7 @@ import { validateSalesOrder } from "./components/helper";
 import { useToast } from "../components/toast/ToastProvider";
 import BasicInformationSection from "../inbound/components/asnform/BasicInformationSection";
 import ShipToCustomer from "./components/ShipToCustomer";
+import PaginatedEntityDropdown from "../inbound/components/asnform/common/PaginatedEntityDropdown";
 
 const Switch = ({ checked, onChange }) => (
   <button
@@ -79,7 +80,8 @@ const CreateSalesOrder = () => {
     instructions: "",
   });
   const [shipping, setShipping] = useState({
-    carrier: "",
+    carrier_id: null,
+    carrier_name: "",
     serviceLevel: "",
     packagingPreference: "",
     codAmount: "",
@@ -100,7 +102,6 @@ const CreateSalesOrder = () => {
   const [emailError, setEmailError] = useState("");
 
   const hydrateForm = (data) => {
-    // HEADER
     setHeader({
       warehouse_id: data.warehouse_id || null,
       warehouse_name: data.warehouse?.warehouse_name || "",
@@ -113,7 +114,6 @@ const CreateSalesOrder = () => {
       notes: data.notes || "",
     });
 
-    // SHIP TO
     setShipTo({
       name: data.ship_to_name || data.customer_name || "",
       phone: data.ship_to_phone || data.customer_phone || "",
@@ -127,9 +127,10 @@ const CreateSalesOrder = () => {
       instructions: data.special_instructions || "",
     });
 
-    // SHIPPING
     setShipping({
-      carrier: data.carrier || "",
+      carrier_id: data.carrier_id || null,
+      carrier_name:
+        data.carrier?.carrier_name || data.carrier_name || data.carrier || "",
       serviceLevel: data.carrier_service || "",
       packagingPreference: data.packaging_preference || "",
       codAmount: data.cod_amount || "",
@@ -157,7 +158,6 @@ const CreateSalesOrder = () => {
       })) || [],
     );
 
-    // STATUS
     setStatus(data.status || "DRAFT");
   };
 
@@ -257,6 +257,8 @@ const CreateSalesOrder = () => {
     sla_due_date: header.slaDueDate ? header.slaDueDate.split("T")[0] : null,
 
     carrier: shipping.carrier || null,
+    carrier_id: shipping.carrier_id || null,
+    carrier_name: shipping.carrier_name || null,
     carrier_service: shipping.serviceLevel || null,
 
     reference_no: header.orderRef || null,
@@ -464,11 +466,33 @@ const CreateSalesOrder = () => {
 
           <FormCard title="Carrier & Shipping">
             <FormGrid>
-              <InputField
-                label="Carrier"
-                value={shipping.carrier}
-                onChange={(v) => setSh("carrier", v)}
-              />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Carrier
+                </label>
+
+                <PaginatedEntityDropdown
+                  endpoint="/carriers"
+                  listKey="carriers"
+                  value={shipping.carrier_id}
+                  onChange={(id, carrier) => {
+                    setShipping((p) => ({
+                      ...p,
+                      carrier_id: id ? Number(id) : null,
+                      carrier_name: carrier?.carrier_name || "",
+                    }));
+                  }}
+                  placeholder="Select Carrier"
+                  limit={10}
+                  // enableSearch
+                  searchParam="search"
+                  disabled={isLocked}
+                  renderItem={(c) => ({
+                    title: `${c.carrier_name} (${c.carrier_code})`,
+                    subtitle: `${c.carrier_type || ""}${c.phone ? " • " + c.phone : ""}`,
+                  })}
+                />
+              </div>
               <InputField
                 label="Service Level"
                 value={shipping.serviceLevel}

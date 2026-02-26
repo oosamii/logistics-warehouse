@@ -1,64 +1,88 @@
 import React, { useEffect, useMemo, useState } from "react";
 import FilterBar from "../components/FilterBar";
-import CusTable from "../components/CusTable";
-import Pagination from "../components/Pagination";
 import PaginatedEntityDropdown from "../inbound/components/asnform/common/PaginatedEntityDropdown";
 import CreateInvoiceModal from "./components/CreateInvoiceModal";
 import http from "../../api/http";
+import { ChevronDown, ChevronRight } from "lucide-react";
+
+const fmtINR = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
+const niceChargeType = (t = "") =>
+  String(t)
+    .replaceAll("_", " ")
+    .toLowerCase()
+    .replace(/\b\w/g, (m) => m.toUpperCase());
+
+const eventTitle = (e) => {
+  if (String(e.charge_type).toUpperCase() === "STORAGE") {
+    if (e.storage_start_date && e.storage_end_date) {
+      return `Period: ${e.storage_start_date} → ${e.storage_end_date}`;
+    }
+    if (e.reference_no) return e.reference_no;
+    return "Storage";
+  }
+  return e.reference_no || e.event_id || "-";
+};
+
+const eventMeta = (e) => {
+  const qty = Number(e.qty || 0);
+  const basis = e.billing_basis
+    ? String(e.billing_basis).replaceAll("_", " ")
+    : "";
+  if (qty)
+    return `${qty.toLocaleString("en-IN")} ${basis ? `(${basis})` : ""}`.trim();
+  return basis || "-";
+};
 
 const ReadyToInvoice = () => {
   const [warehouses, setWarehouses] = useState([]);
-  const [rows, setRows] = useState([]);
+  const [groups, setGroups] = useState([]);
   const [loading, setLoading] = useState(false);
-
-  const [pagination, setPagination] = useState({
-    total: 0,
-    page: 1,
-    pages: 1,
-    limit: 5,
-  });
-
-  const [selectedIds, setSelectedIds] = useState(new Set());
 
   const [filters, setFilters] = useState({
     period: "This Month",
     warehouse_id: "",
     client_id: "",
-    status: "All",
-    date_from: "",
-    date_to: "",
-    page: 1,
-    limit: 10,
     search: "",
   });
 
+  // accordion open keys
+  const [openKeys, setOpenKeys] = useState(new Set());
+
+  // ✅ selection per group (client+warehouse)
+  const [selectedByGroup, setSelectedByGroup] = useState({});
+
+  // modal
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedEventIds, setSelectedEventIds] = useState([]);
   const [activeClient, setActiveClient] = useState(null);
   const [activeWarehouse, setActiveWarehouse] = useState(null);
 
-  const fmtINR = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+  const groupKey = (g) => `${g.client_id}-${g.warehouse_id}`;
 
-  const getRangeFromPeriod = (period) => {
-    const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    const toYMD = (d) => d.toISOString().slice(0, 10);
+  const getSelectedSet = (key) => selectedByGroup[key] || new Set();
 
-    if (period === "This Month")
-      return { date_from: toYMD(startOfMonth), date_to: toYMD(endOfMonth) };
-    if (period === "Last Month") {
-      const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const e = new Date(now.getFullYear(), now.getMonth(), 0);
-      return { date_from: toYMD(s), date_to: toYMD(e) };
-    }
-    if (period === "This Quarter") {
-      const q = Math.floor(now.getMonth() / 3);
-      const s = new Date(now.getFullYear(), q * 3, 1);
-      const e = new Date(now.getFullYear(), q * 3 + 3, 0);
-      return { date_from: toYMD(s), date_to: toYMD(e) };
-    }
-    return { date_from: "", date_to: "" };
+  const toggleEvent = (key, eventId) => {
+    setSelectedByGroup((prev) => {
+      const cur = new Set(prev[key] || []);
+      if (cur.has(eventId)) cur.delete(eventId);
+      else cur.add(eventId);
+      return { ...prev, [key]: cur };
+    });
+  };
+
+  const toggleSelectAllInGroup = (key, eventIds) => {
+    setSelectedByGroup((prev) => {
+      const cur = new Set(prev[key] || []);
+      const allSelected =
+        eventIds.length > 0 && eventIds.every((id) => cur.has(id));
+
+      const next = new Set(cur);
+      if (allSelected) eventIds.forEach((id) => next.delete(id));
+      else eventIds.forEach((id) => next.add(id));
+
+      return { ...prev, [key]: next };
+    });
   };
 
   useEffect(() => {
@@ -76,75 +100,29 @@ const ReadyToInvoice = () => {
     loadWarehouses();
   }, []);
 
-  const buildQs = (pageOverride) => {
+  const buildQs = () => {
     const qs = new URLSearchParams();
-    const page = pageOverride ?? filters.page;
-    qs.set("page", String(page));
-    qs.set("limit", String(filters.limit));
-
-    const range =
-      filters.period === "Custom Range"
-        ? { date_from: filters.date_from, date_to: filters.date_to }
-        : getRangeFromPeriod(filters.period);
-
-    if (filters.client_id) qs.set("client_id", filters.client_id);
     if (filters.warehouse_id) qs.set("warehouse_id", filters.warehouse_id);
-    if (filters.status && filters.status !== "All")
-      qs.set("status", filters.status);
-    if (range.date_from) qs.set("date_from", range.date_from);
-    if (range.date_to) qs.set("date_to", range.date_to);
-
-    // add only if backend supports it
-    if (filters.search?.trim()) qs.set("search", filters.search.trim());
-
+    if (filters.client_id) qs.set("client_id", filters.client_id);
     return qs.toString();
   };
 
-  const loadEvents = async (page = 1) => {
+  const loadReadyGroups = async () => {
     setLoading(true);
     try {
-      const qs = new URLSearchParams();
-      qs.set("page", String(page));
-      qs.set("limit", String(filters.limit));
-
-      // READY page should always be READY
-      qs.set("status", "READY");
-
-      const range =
-        filters.period === "Custom Range"
-          ? { date_from: filters.date_from, date_to: filters.date_to }
-          : getRangeFromPeriod(filters.period);
-
-      if (filters.client_id) qs.set("client_id", filters.client_id);
-      if (filters.warehouse_id) qs.set("warehouse_id", filters.warehouse_id);
-      if (range.date_from) qs.set("date_from", range.date_from);
-      if (range.date_to) qs.set("date_to", range.date_to);
-      if (filters.search?.trim()) qs.set("search", filters.search.trim());
-
-      const res = await http.get(`/billable-events/?${qs.toString()}`);
-
-      const list = res?.data?.data?.billable_events || [];
-      const pag = res?.data?.data?.pagination || {};
-
-      setRows(Array.isArray(list) ? list : []);
-      setPagination({
-        total: pag.total ?? 0,
-        page: pag.page ?? page,
-        pages: pag.pages ?? 1,
-        limit: pag.limit ?? filters.limit,
-      });
-
-      setFilters((p) => ({ ...p, page: pag.page ?? page }));
+      const res = await http.get(`/billing/ready-to-invoice?${buildQs()}`);
+      const list = res?.data?.data || [];
+      setGroups(Array.isArray(list) ? list : []);
     } catch {
-      setRows([]);
-      setPagination({ total: 0, page: 1, pages: 1, limit: filters.limit });
+      setGroups([]);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadEvents(1);
+    loadReadyGroups();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterChange = (key, value) => {
@@ -156,223 +134,298 @@ const ReadyToInvoice = () => {
       period: "This Month",
       warehouse_id: "",
       client_id: "",
-      status: "All",
-      date_from: "",
-      date_to: "",
-      page: 1,
-      limit: 10,
       search: "",
     });
-    setSelectedIds(new Set());
-    setTimeout(() => loadEvents(1), 0);
+    setOpenKeys(new Set());
+    setSelectedByGroup({});
+    setTimeout(loadReadyGroups, 0);
   };
 
   const handleApply = () => {
-    setSelectedIds(new Set());
-    loadEvents(1);
-  };
-
-  const visibleIds = useMemo(() => rows.map((r) => r.id), [rows]);
-
-  const allVisibleSelected = useMemo(() => {
-    if (!visibleIds.length) return false;
-    return visibleIds.every((id) => selectedIds.has(id));
-  }, [visibleIds, selectedIds]);
-
-  const toggleSelectAllVisible = () => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        visibleIds.forEach((id) => next.delete(id));
-      } else {
-        visibleIds.forEach((id) => next.add(id));
-      }
-      return next;
-    });
-  };
-
-  const toggleSelectOne = (id) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(id)) next.delete(id);
-      else next.add(id);
-      return next;
-    });
+    setOpenKeys(new Set());
+    setSelectedByGroup({});
+    loadReadyGroups();
   };
 
   const filterConfig = [
     {
       key: "period",
-      label: "Period",
+      label: "",
       value: filters.period,
-      options: ["This Month", "Last Month", "This Quarter", "Custom Range"],
+      options: ["This Month", "Last Month", "This Quarter"],
     },
     {
       key: "search",
       type: "search",
-      label: "Search",
-      placeholder: "Search reference/event…",
+      label: "",
+      placeholder: "Search Invoice, Customer…",
       value: filters.search,
-      className: "min-w-[300px]",
+      className: "min-w-[260px]",
     },
   ];
 
-  const tableData = useMemo(() => {
-    return rows.map((e) => ({
-      id: e.id,
-      eventId: e.event_id,
-      type: e.charge_type,
-      reference: e.reference_no,
-      customer: e.client?.client_name || "-",
-      warehouse: e.warehouse?.warehouse_name || "-",
-      qty: e.qty,
-      rate: e.rate ? `₹${e.rate}` : "-",
-      amount: e.amount ? `₹${e.amount}` : "-",
-      date: e.event_date,
-    }));
-  }, [rows]);
+  const filteredGroups = useMemo(() => {
+    const q = filters.search?.trim().toLowerCase();
+    if (!q) return groups;
 
-  // const runConfirmedAction = async () => {
-  //   const { type, invoiceId } = confirm;
-  //   if (!type || !invoiceId) return;
+    return groups
+      .map((g) => {
+        const events = (g.events || []).filter((e) => {
+          const hay = [
+            e.event_id,
+            e.charge_type,
+            e.reference_no,
+            e.description,
+            e.notes,
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+          return hay.includes(q);
+        });
 
-  //   setConfirmLoading(true);
-  //   try {
-  //     if (type === "send") {
-  //       await http.post(`/invoices/${invoiceId}/send`);
-  //     } else if (type === "void") {
-  //       await http.post(`/invoices/${invoiceId}/void`);
-  //     }
+        const clientHay =
+          `${g.client?.client_name || ""} ${g.client?.client_code || ""}`.toLowerCase();
+        const matchClient = clientHay.includes(q);
 
-  //     closeConfirm();
-  //     loadInvoices(pagination.page);
-  //   } catch (e) {
-  //     // optional: toast here
-  //     console.error(e);
-  //   } finally {
-  //     setConfirmLoading(false);
-  //   }
-  // };
+        if (matchClient) return g;
+        if (events.length) return { ...g, events, event_count: events.length };
+        return null;
+      })
+      .filter(Boolean);
+  }, [groups, filters.search]);
 
-  // const openConfirm = (type, invoice) => {
-  //   setConfirm({
-  //     open: true,
-  //     type,
-  //     invoiceId: invoice.id,
-  //     invoiceNo: invoice.invoice_no,
-  //   });
-  // };
-
-  // const closeConfirm = () => {
-  //   if (confirmLoading) return;
-  //   setConfirm({ open: false, type: null, invoiceId: null, invoiceNo: "" });
-  // };
-
-  const columns = [
-    {
-      key: "select",
-      title: (
-        <input
-          type="checkbox"
-          checked={allVisibleSelected}
-          onChange={toggleSelectAllVisible}
-        />
-      ),
-      render: (row) => (
-        <input
-          type="checkbox"
-          checked={selectedIds.has(row.id)}
-          onChange={() => toggleSelectOne(row.id)}
-        />
-      ),
-    },
-    { key: "eventId", title: "Event ID" },
-    { key: "type", title: "Charge Type" },
-    { key: "reference", title: "Reference" },
-    { key: "customer", title: "Client" },
-    { key: "warehouse", title: "Warehouse" },
-    { key: "qty", title: "Qty" },
-    { key: "rate", title: "Rate" },
-    { key: "amount", title: "Amount" },
-    { key: "date", title: "Event Date" },
-  ];
+  const toggleOpen = (key) => {
+    setOpenKeys((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return next;
+    });
+  };
 
   return (
     <div className="space-y-5">
-      <FilterBar
-        filters={filterConfig}
-        onFilterChange={handleFilterChange}
-        onReset={handleReset}
-        onApply={handleApply}
-      >
-        {/* Warehouse */}
-        <div className="w-full sm:w-[240px]">
-          <p className="text-xs text-gray-500 mb-1">Warehouse</p>
-          <select
-            value={filters.warehouse_id}
-            onChange={(e) => handleFilterChange("warehouse_id", e.target.value)}
-            className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
-          >
-            <option value="">All Warehouses</option>
-            {warehouses.map((w) => (
-              <option key={w.id} value={w.id}>
-                {w.warehouse_name} ({w.warehouse_code})
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Client (paginated dropdown) */}
-        <div className="w-full sm:w-[280px]">
-          <p className="text-xs text-gray-500 mb-1">Client</p>
-          <PaginatedEntityDropdown
-            endpoint="/clients"
-            listKey="clients"
-            value={filters.client_id}
-            onChange={(id) => handleFilterChange("client_id", id)}
-            placeholder="All Clients"
-            enableSearch
-            limit={10}
-            searchParam="search"
-            renderItem={(c) => ({
-              title: `${c.client_name} (${c.client_code})`,
-              subtitle: c.email || c.phone || "",
-            })}
-          />
-        </div>
-      </FilterBar>
-      <div className="flex items-center justify-end gap-3">
-        <div className="flex items-center rounded-md bg-gray-100 px-3 py-2 text-sm font-medium text-gray-700">
-          Selected:
-          <span className="ml-2 rounded bg-blue-600 px-2 py-0.5 text-xs font-semibold text-white">
-            {selectedIds.size}
-          </span>
-        </div>
-
-        <button
-          type="button"
-          disabled={selectedIds.size === 0}
-          onClick={() => {
-            setSelectedEventIds(Array.from(selectedIds));
-            setActiveClient(filters.client_id || null);
-            setActiveWarehouse(filters.warehouse_id || null);
-            setShowInvoiceModal(true);
-          }}
-          className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700 disabled:opacity-50"
+      <div className="rounded-xl border border-gray-200 bg-white p-3">
+        <FilterBar
+          filters={filterConfig}
+          onFilterChange={handleFilterChange}
+          onReset={handleReset}
+          onApply={handleApply}
         >
-          Create Invoice
-        </button>
-      </div>
-      <div className="rounded-xl border border-gray-200 bg-white">
-        <CusTable columns={columns} data={tableData} loading={loading} />
+          {/* Warehouse */}
+          <div className="w-full sm:w-[220px]">
+            <p className="mb-1 text-xs text-gray-500">Warehouse</p>
+            <select
+              value={filters.warehouse_id}
+              onChange={(e) =>
+                handleFilterChange("warehouse_id", e.target.value)
+              }
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+            >
+              <option value="">All Warehouses</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.warehouse_name} ({w.warehouse_code})
+                </option>
+              ))}
+            </select>
+          </div>
 
-        <div className="border-t border-gray-200">
-          <Pagination
-            pagination={pagination}
-            onPageChange={(p) => loadEvents(p)}
-          />
-        </div>
+          {/* Client */}
+          <div className="w-full sm:w-[280px]">
+            <p className="mb-1 text-xs text-gray-500">Client</p>
+            <PaginatedEntityDropdown
+              endpoint="/clients"
+              listKey="clients"
+              value={filters.client_id}
+              onChange={(id) => handleFilterChange("client_id", id)}
+              placeholder="All Clients"
+              enableSearch
+              limit={10}
+              searchParam="search"
+              renderItem={(c) => ({
+                title: `${c.client_name} (${c.client_code})`,
+                subtitle: c.email || c.phone || "",
+              })}
+            />
+          </div>
+        </FilterBar>
       </div>
+
+      {loading && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
+          Loading…
+        </div>
+      )}
+
+      {!loading && filteredGroups.length === 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white p-6 text-sm text-gray-600">
+          No ready-to-invoice data found.
+        </div>
+      )}
+
+      {!loading &&
+        filteredGroups.map((g) => {
+          const key = groupKey(g);
+          const isOpen = openKeys.has(key);
+
+          const events = Array.isArray(g.events) ? g.events : [];
+          const preview = isOpen ? events : events.slice(0, 2);
+
+          const eventIds = events.map((e) => e.id).filter(Boolean);
+          const selectedSet = getSelectedSet(key);
+          const selectedCount = selectedSet.size;
+          const allSelected =
+            eventIds.length > 0 && eventIds.every((id) => selectedSet.has(id));
+
+          return (
+            <div
+              key={key}
+              className="rounded-xl border border-gray-200 bg-white"
+            >
+              <button
+                type="button"
+                onClick={() => toggleOpen(key)}
+                className="flex w-full items-center justify-between gap-4 px-5 py-4"
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gray-100 text-gray-700">
+                    {isOpen ? (
+                      <ChevronDown size={16} />
+                    ) : (
+                      <ChevronRight size={16} />
+                    )}
+                  </div>
+
+                  <div className="min-w-0 text-left">
+                    <div className="truncate text-sm font-semibold text-gray-900">
+                      {g.client?.client_name || "—"}{" "}
+                      {g.client?.client_code ? (
+                        <span className="text-gray-400 font-medium">
+                          ({g.client.client_code})
+                        </span>
+                      ) : null}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      Warehouse ID: {g.warehouse_id}
+                    </div>
+
+                    {/* ✅ selection controls in header */}
+                    <div
+                      className="mt-2 flex items-center gap-3"
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <label className="inline-flex items-center gap-2 text-xs font-semibold text-gray-600">
+                        <input
+                          type="checkbox"
+                          checked={allSelected}
+                          onChange={() => toggleSelectAllInGroup(key, eventIds)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                        Select All
+                      </label>
+
+                      <div className="text-xs text-gray-500">
+                        Selected:{" "}
+                        <span className="font-semibold text-gray-900">
+                          {selectedCount}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-6 shrink-0">
+                  <div className="text-right">
+                    <div className="text-[10px] font-semibold text-gray-400 uppercase">
+                      Events
+                    </div>
+                    <div className="text-sm font-semibold text-gray-900">
+                      {Number(g.event_count || events.length || 0)}
+                    </div>
+                  </div>
+
+                  <div className="text-right">
+                    <div className="text-[10px] font-semibold text-gray-400 uppercase">
+                      Ready Amount
+                    </div>
+                    <div className="text-sm font-bold text-blue-600">
+                      {fmtINR(g.ready_amount)}
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const ids = Array.from(selectedSet);
+                      setSelectedEventIds(ids);
+                      setActiveClient(g.client_id);
+                      setActiveWarehouse(g.warehouse_id);
+                      setShowInvoiceModal(true);
+                    }}
+                    disabled={selectedCount === 0}
+                    className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700 disabled:opacity-50"
+                  >
+                    Create Invoice
+                  </button>
+                </div>
+              </button>
+
+              {/* Expanded list */}
+              <div className="divide-y divide-gray-200 bg-blue-50/40">
+                {preview.map((e) => {
+                  const checked = selectedSet.has(e.id);
+
+                  return (
+                    <div
+                      key={e.id}
+                      className="grid grid-cols-12 gap-3 px-4 py-3 text-sm"
+                      onClick={(ev) => ev.stopPropagation()}
+                    >
+                      <div className="col-span-1 flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={checked}
+                          onChange={() => toggleEvent(key, e.id)}
+                          className="h-4 w-4 rounded border-gray-300"
+                        />
+                      </div>
+
+                      <div className="col-span-3 text-gray-700">
+                        {niceChargeType(e.charge_type)}
+                      </div>
+
+                      <div className="col-span-4 font-medium text-blue-700">
+                        {eventTitle(e)}
+                      </div>
+
+                      <div className="col-span-2 text-gray-600">
+                        {eventMeta(e)}
+                      </div>
+
+                      <div className="col-span-2 text-right font-semibold text-gray-900">
+                        {fmtINR(e.amount)}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {!isOpen && events.length > 5 && (
+                <button
+                  type="button"
+                  onClick={() => toggleOpen(key)}
+                  className="w-full px-5 py-3 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                >
+                  View all {events.length} events
+                </button>
+              )}
+            </div>
+          );
+        })}
+
       <CreateInvoiceModal
         isOpen={showInvoiceModal}
         onClose={() => setShowInvoiceModal(false)}
@@ -381,8 +434,9 @@ const ReadyToInvoice = () => {
         warehouseId={activeWarehouse}
         onSuccess={() => {
           setShowInvoiceModal(false);
-          setSelectedIds(new Set());
-          loadEvents(1);
+          setSelectedEventIds([]);
+          setSelectedByGroup({});
+          loadReadyGroups();
         }}
       />
     </div>

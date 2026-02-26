@@ -332,6 +332,7 @@ import {
   List,
   BookOpen,
 } from "lucide-react";
+import PaymentsLedgerModal from "./components/PaymentsLedgerModal";
 
 const fmtINR = (n) => {
   const num = Number(n || 0);
@@ -361,16 +362,21 @@ const StatusChip = ({ value }) => {
 
 const InvoiceDetail = () => {
   const navigate = useNavigate();
-  const { id } = useParams(); // invoice id
+  const { id } = useParams();
   const [loading, setLoading] = useState(false);
   const [invoice, setInvoice] = useState(null);
   const [error, setError] = useState("");
+
+  const [showLedger, setShowLedger] = useState(false);
+  const [showRecordPay, setShowRecordPay] = useState(false);
+  const [activeClient, setActiveClient] = useState(null);
 
   const loadInvoice = async () => {
     setLoading(true);
     setError("");
     try {
       const res = await http.get(`/invoices/${id}`);
+      console.log("Invoice API response", res);
       setInvoice(res?.data?.data || null);
     } catch (e) {
       setInvoice(null);
@@ -382,7 +388,6 @@ const InvoiceDetail = () => {
 
   useEffect(() => {
     if (id) loadInvoice();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
   const charges = useMemo(() => invoice?.lineItems || [], [invoice]);
@@ -398,13 +403,13 @@ const InvoiceDetail = () => {
   }, [invoice]);
 
   const breadcrumbs = [
-    { label: "Billing", href: "/billing" },
+    { label: "Billing", to: "/billing" },
     { label: "Invoice Detail" },
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto max-w-7xl px-6 py-6">
+    <div className="min-h-screen ">
+      <div className="mx-auto px-4 py-6">
         <PageHeader
           title="Invoice Detail"
           breadcrumbs={breadcrumbs}
@@ -520,11 +525,26 @@ const InvoiceDetail = () => {
                 </div>
 
                 <div className="flex flex-wrap gap-4 lg:justify-end">
-                  <button className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                  <button
+                    onClick={() =>
+                      navigate(`/billing/billableEventDetail/${id}`)
+                    }
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  >
                     <List size={16} />
                     View Billable Events
                   </button>
-                  <button className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700">
+                  <button
+                    onClick={() => {
+                      setActiveClient({
+                        id: invoice.client_id,
+                        name: invoice.client?.client_name || "",
+                        code: invoice.client?.client_code || "",
+                      });
+                      setShowLedger(true);
+                    }}
+                    className="inline-flex items-center gap-2 text-sm font-semibold text-blue-600 hover:text-blue-700"
+                  >
                     <BookOpen size={16} />
                     View Ledger
                   </button>
@@ -709,6 +729,12 @@ const InvoiceDetail = () => {
           </div>
         )}
       </div>
+      <PaymentsLedgerModal
+        isOpen={showLedger}
+        onClose={() => setShowLedger(false)}
+        client={activeClient}
+        showActions={false}
+      />
     </div>
   );
 };

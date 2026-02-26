@@ -51,7 +51,6 @@ const AsnDetail = () => {
     [],
   );
 
-  // Determine current status for journey steps
   const getJourneySteps = () => {
     if (!asnData) return [];
 
@@ -173,7 +172,6 @@ const AsnDetail = () => {
     return steps;
   };
 
-  // Format ETA for display
   const formatETA = (etaString) => {
     if (!etaString) return "Not set";
     const etaDate = new Date(etaString);
@@ -195,7 +193,6 @@ const AsnDetail = () => {
     }
   };
 
-  // Format progress text
   const getProgressText = () => {
     if (!asnData) return "0 / 0 Units";
     return `${asnData.total_received_units} / ${asnData.total_expected_units} Units`;
@@ -224,39 +221,6 @@ const AsnDetail = () => {
     }
   };
 
-  // const handleCancelASN = async () => {
-  //   if (
-  //     window.confirm(
-  //       "Are you sure you want to cancel this ASN? This action cannot be undone.",
-  //     )
-  //   ) {
-  //     try {
-  //       let cancelResponse;
-  //       try {
-  //         cancelResponse = await http.post(`/asns/${id}/cancel`);
-  //       } catch (endpoint1Error) {
-  //         console.log("Trying alternative cancel endpoint...");
-  //         cancelResponse = await http.delete(`/asns/${id}`);
-  //       }
-
-  //       if (cancelResponse.data.success) {
-  //         const response = await http.get(`/asns/${id}`);
-  //         if (response.data.success) {
-  //           setAsnData(response.data.data);
-  //           toast.error("ASN cancelled successfully!");
-  //         }
-  //       } else {
-  //         toast.error("Failed to cancel ASN");
-  //       }
-  //     } catch (err) {
-  //       console.error("Error cancelling ASN:", err);
-  //       toast.error("Failed to cancel ASN. Please try again.");
-  //     }
-  //   }
-  // };
-
-  // Handle print ASN
-
   const handleCancelASN = () => {
     setShowCancelModal(true);
   };
@@ -269,7 +233,7 @@ const AsnDetail = () => {
 
       if (res.data?.success) {
         toast.success(res.data?.message || "ASN cancelled successfully");
-        navigate("/inbound"); // since it’s deleted completely
+        navigate("/inbound");
         return;
       }
 
@@ -284,11 +248,9 @@ const AsnDetail = () => {
   };
 
   const handlePrintASN = () => {
-    // You can implement print functionality here
     window.print();
   };
 
-  // Format status for display
   const formatStatus = (status) => {
     return status.replace(/_/g, " ");
   };

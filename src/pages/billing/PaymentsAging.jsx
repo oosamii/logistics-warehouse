@@ -406,8 +406,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
         await http.post(`/payments/${paymentId}/reverse`);
       }
       closeConfirm();
-      // refresh ledger data inside modal via callback
-      // (we'll trigger it with a refetch key)
       setLedgerReloadKey((k) => k + 1);
       loadAging();
     } catch (e) {
@@ -488,7 +486,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
         onReversePayment={(payment) => openConfirm("reverse", payment)}
         onOpenInvoice={(invoiceNo) => onOpenInvoice?.(invoiceNo)}
       />
-
       <RecordPaymentModal
         isOpen={showRecordPay}
         onClose={() => setShowRecordPay(false)}

@@ -38,7 +38,7 @@ import SkuDetailPage from "../inventory/components/SkuDetailPage";
 import PickWaveDetails from "../picking/PickWaveDetails";
 import CreatePickWavePage from "../picking/components/CreatePickWavePage";
 import PackOrderDetail from "../packing/PackOrderDetail";
-import BillableEventDetail from "../billing/BillableEventDetail";
+import BillableEventDetail from "../billing/components/BillableEventDetail";
 import InvoiceDetail from "../billing/InvoiceDetail";
 
 const protect = (path, element) => {
@@ -156,10 +156,10 @@ const NewRoutes = [
   },
 
   { path: "/billing", element: protect("/billing", <Billing />) },
-  // {
-  //   path: "/billing/invoices/:invoiceNo",
-  //   element: protect("/billing/invoices/:invoiceNo", <InvoiceDetail />),
-  // },
+  {
+    path: "/billing/invoices/:id",
+    element: protect("/billing/invoices/:id", <InvoiceDetail />),
+  },
   {
     path: "/billing/billableEventDetail/:id",
     element: protect(

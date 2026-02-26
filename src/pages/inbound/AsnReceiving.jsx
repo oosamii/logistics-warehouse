@@ -13,8 +13,7 @@ import http from "../../api/http";
 import {
   calcShortage,
   calcTotals,
-  normalizeAsn,
-  toReceivingRows,
+  ReceivingRows,
 } from "./components/utils/asnReceiving";
 import {
   createPallet,
@@ -57,7 +56,7 @@ const AsnReceiving = () => {
 
   const [shortageMeta, setShortageMeta] = useState({});
 
-  const rows = useMemo(() => toReceivingRows(asn?.lines || []), [asn]);
+  const rows = useMemo(() => ReceivingRows(asn?.lines || []), [asn]);
   const [activeLineId, setActiveLineId] = useState(null);
   const [lineReceipts, setLineReceipts] = useState([]);
   const [receiptsLoading, setReceiptsLoading] = useState(false);
@@ -76,7 +75,8 @@ const AsnReceiving = () => {
   const fetchAsn = async () => {
     if (!navAsn?.id) return;
     const res = await http.get(`/asns/${navAsn.id}`);
-    setAsn(normalizeAsn(res));
+    console.log("Fetched ASN details:", res?.data);
+    setAsn(res?.data?.data);
   };
 
   const fetchPallets = async () => {
@@ -160,7 +160,7 @@ const AsnReceiving = () => {
       },
       { key: "uom", title: "UOM" },
       { key: "exp", title: "Exp" },
-      { key: "rcvd", title: "Rcvd" },
+      { key: "total_received_units", title: "Rcvd" },
       { key: "dmg", title: "Dmg" },
       {
         key: "status",
@@ -274,10 +274,32 @@ const AsnReceiving = () => {
         `/asn-lines/${activeLine.asnLineId}/receive`,
         payload,
       );
-      console.log("Receive API success:", res?.data);
 
       toast.success("Received quantity added.");
-      await fetchAsn();
+      setAsn((prev) => {
+        if (!prev) return prev;
+
+        return {
+          ...prev,
+          lines: (prev.lines || []).map((l) => {
+            if (String(l.id) !== String(activeLine.asnLineId)) return l;
+
+            const newReceived = Number(l.received_qty || 0) + Number(good || 0);
+
+            const newDamaged = Number(l.damaged_qty || 0) + Number(dmg || 0);
+
+            return {
+              ...l,
+              received_qty: newReceived,
+              damaged_qty: newDamaged,
+              shortage_qty: Math.max(
+                0,
+                Number(l.expected_qty || 0) - (newReceived + newDamaged),
+              ),
+            };
+          }),
+        };
+      });
       const list = await getAsnLinePallets(activeLine.asnLineId);
       setLineReceipts(list || []);
 
@@ -397,8 +419,8 @@ const AsnReceiving = () => {
                   partialText={
                     activeLine
                       ? `${activeLine.status}: ${
-                          Number(activeLine.rcvd || 0) +
-                          Number(activeLine.dmg || 0)
+                          Number(activeLine.total_received_units || 0) +
+                          Number(activeLine.total_damaged_units || 0)
                         } / ${activeLine.exp}`
                       : "-"
                   }

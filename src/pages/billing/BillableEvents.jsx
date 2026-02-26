@@ -1,12 +1,13 @@
 import React, { useEffect, useMemo, useState } from "react";
 import FilterBar from "../components/FilterBar";
 import CusTable from "../components/CusTable";
-import { Download, Plus, Play, Eye } from "lucide-react";
+import { Download, Plus, Play, Eye, Pencil } from "lucide-react";
 import http from "../../api/http";
 import StatCard from "../components/StatCard";
 import PaginatedEntityDropdown from "../inbound/components/asnform/common/PaginatedEntityDropdown";
 import Pagination from "../components/Pagination";
 import { useNavigate } from "react-router-dom";
+import EditBillableEventModal from "./components/EditBillableEventModal";
 
 const BillableEvents = () => {
   const navigate = useNavigate();
@@ -17,6 +18,15 @@ const BillableEvents = () => {
   const [loadingEvents, setLoadingEvents] = useState(false);
   const [loadingSummary, setLoadingSummary] = useState(false);
   const [activeTab, setActiveTab] = useState("billable");
+
+  const [showEdit, setShowEdit] = useState(false);
+  const [editEvent, setEditEvent] = useState(null);
+
+  const openEdit = (row) => {
+    const full = eventsData.find((e) => e.id === row.id);
+    setEditEvent(full || null);
+    setShowEdit(true);
+  };
 
   const [eventsPagination, setEventsPagination] = useState({
     total: 0,
@@ -223,22 +233,46 @@ const BillableEvents = () => {
     {
       key: "actions",
       title: "Actions",
-      render: (row) => (
-        <div className="flex items-center justify-end gap-2">
-          {row.status === "Blocked" ? (
-            <button className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
-              Fix Rate
-            </button>
-          ) : (
-            <button
-              onClick={() => navigate(`/billing/billableEventDetail/${row.id}`)}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-            >
-              <Eye size={16} />
-            </button>
-          )}
-        </div>
-      ),
+      render: (row) => {
+        const canEdit = !["INVOICED", "VOID"].includes(
+          String(row.rawStatus || "").toUpperCase(),
+        );
+
+        return (
+          <div className="flex items-center justify-end gap-2">
+            {row.status === "Blocked" ? (
+              <button className="rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-blue-700">
+                Fix Rate
+              </button>
+            ) : (
+              <>
+                {/* View */}
+                <button
+                  onClick={() =>
+                    navigate(`/billing/billableEventDetail/${row.id}`)
+                  }
+                  className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+                  title="View"
+                >
+                  <Eye size={16} />
+                </button>
+
+                {/* Edit */}
+                {row.status === "Blocked" && (
+                  <button
+                    onClick={() => openEdit(row)}
+                    disabled={!canEdit}
+                    className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                    title={!canEdit ? "Cannot edit INVOICED/VOID" : "Edit"}
+                  >
+                    <Pencil size={16} />
+                  </button>
+                )}
+              </>
+            )}
+          </div>
+        );
+      },
     },
   ];
 
@@ -266,18 +300,23 @@ const BillableEvents = () => {
     return eventsData.map((e) => ({
       id: e.id,
       eventId: e.event_id,
-      type: e.charge_type, // or prettify
+      type: e.charge_type,
       reference: e.reference_no,
       customer: e.client?.client_name || "-",
       basis: `${e.qty} (${e.billing_basis || "-"})`,
       rate: e.rate ? `₹${e.rate}` : "-",
       amount: e.amount ? `₹${e.amount}` : "-",
+      rawStatus: e.status,
       status:
         e.status === "READY"
           ? "Ready"
           : e.status === "BLOCKED"
             ? "Blocked"
-            : "Pending",
+            : e.status === "INVOICED"
+              ? "Invoiced"
+              : e.status === "VOID"
+                ? "Void"
+                : "Pending",
     }));
   }, [eventsData]);
 
@@ -443,6 +482,15 @@ const BillableEvents = () => {
           </div>
         </div>
       </div>
+      <EditBillableEventModal
+        isOpen={showEdit}
+        onClose={() => {
+          setShowEdit(false);
+          setEditEvent(null);
+        }}
+        event={editEvent}
+        onUpdated={() => loadEvents(eventsPagination.page)}
+      />
     </div>
   );
 };

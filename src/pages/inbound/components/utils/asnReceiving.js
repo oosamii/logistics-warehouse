@@ -5,32 +5,47 @@ export const normalizeAsn = (res) => {
   return res?.data?.data || res?.data || res;
 };
 
-export const toReceivingRows = (lines = []) =>
-  (lines || []).map((l) => {
-    const exp = Number(l.expected_qty || 0);
-    const good = Number(l.received_qty || 0);
-    const dmg = Number(l.damaged_qty || 0);
-    const total = good + dmg;
+export const ReceivingRows = (lines = []) => {
+  return (lines || []).map((l, idx) => {
+    const expected = Number(l.expected_qty || 0);
+    const received = Number(l.received_qty || 0);
+    const damaged = Number(l.damaged_qty || 0);
 
-    let status = "Pending";
-    if (exp > 0 && total === 0) status = "Pending";
-    else if (exp > 0 && total >= exp) status = "Completed";
-    else if (exp > 0 && total > 0 && total < exp) status = "Partial";
-    else status = (l.status || "PENDING").toString();
+    // Prefer backend status, fallback to computed
+    const uiStatus = l.status
+      ? String(l.status).toLowerCase() === "partial"
+        ? "Partial"
+        : String(l.status).toLowerCase() === "completed"
+          ? "Completed"
+          : String(l.status)
+      : received + damaged >= expected && expected > 0
+        ? "Completed"
+        : received + damaged > 0
+          ? "Partial"
+          : "Pending";
 
     return {
-      id: l.id,
+      id: l.id ?? idx + 1,
       asnLineId: l.id,
+
       sku: l.sku?.sku_code || "-",
-      skuDesc: l.sku?.sku_name || "-",
+      skuDesc: l.sku?.sku_name || "",
       uom: l.uom || l.sku?.uom || "-",
-      exp,
-      good,
-      dmg,
-      status,
-      raw: l,
+
+      exp: expected,
+
+      // 👇 these are what your table columns are using
+      total_received_units: received,
+      dmg: damaged,
+
+      // 👇 these are what your right panel partialText is using
+      total_damaged_units: damaged,
+
+      status: uiStatus,
+      raw: l, // keep original for shortage calc
     };
   });
+};
 
 export const calcShortage = (line) => {
   const exp = Number(line?.expected_qty || 0);
@@ -42,15 +57,28 @@ export const calcShortage = (line) => {
 
 export const calcTotals = (asn) => {
   const lines = asn?.lines || [];
-  const totalExpected = lines.reduce(
+
+  const expectedFromLines = lines.reduce(
     (s, l) => s + Number(l.expected_qty || 0),
     0,
   );
-  const receivedGood = lines.reduce(
+  const receivedFromLines = lines.reduce(
     (s, l) => s + Number(l.received_qty || 0),
     0,
   );
-  const damaged = lines.reduce((s, l) => s + Number(l.damaged_qty || 0), 0);
-  const discrepancy = receivedGood + damaged - totalExpected;
-  return { totalExpected, receivedGood, damaged, discrepancy };
+  const damagedFromLines = lines.reduce(
+    (s, l) => s + Number(l.damaged_qty || 0),
+    0,
+  );
+
+  const totalExpected = Number(asn?.total_expected_units ?? expectedFromLines);
+  const receivedGood = Number(asn?.total_received_units ?? receivedFromLines);
+  const damaged = Number(asn?.total_damaged_units ?? damagedFromLines);
+
+  return {
+    totalExpected,
+    receivedGood,
+    damaged,
+    discrepancy: totalExpected - (receivedGood + damaged),
+  };
 };

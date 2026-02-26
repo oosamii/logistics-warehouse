@@ -6,6 +6,7 @@ const PaymentsLedgerModal = ({
   onClose,
   client,
   reloadKey = 0,
+  showActions = true,
   onConfirmPayment,
   onReversePayment,
   onOpenInvoice,
@@ -84,9 +85,11 @@ const PaymentsLedgerModal = ({
                     <th className="px-3 py-2 text-left text-xs font-semibold text-gray-500">
                       Status
                     </th>
-                    <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">
-                      Actions
-                    </th>
+                    {showActions && (
+                      <th className="px-3 py-2 text-right text-xs font-semibold text-gray-500">
+                        Actions
+                      </th>
+                    )}
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-200">
@@ -101,15 +104,21 @@ const PaymentsLedgerModal = ({
 
                         <td className="px-3 py-2 text-sm">
                           {p.Invoice?.invoice_no ? (
-                            <button
-                              type="button"
-                              onClick={() =>
-                                onOpenInvoice?.(p.Invoice.invoice_no)
-                              }
-                              className="text-blue-600 hover:underline"
-                            >
-                              {p.Invoice.invoice_no}
-                            </button>
+                            showActions ? (
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  onOpenInvoice?.(p.Invoice.invoice_no)
+                                }
+                                className="text-blue-600 hover:underline"
+                              >
+                                {p.Invoice.invoice_no}
+                              </button>
+                            ) : (
+                              <span className="text-gray-900">
+                                {p.Invoice.invoice_no}
+                              </span>
+                            )
                           ) : (
                             "-"
                           )}
@@ -127,26 +136,28 @@ const PaymentsLedgerModal = ({
                         <td className="px-3 py-2 text-sm text-gray-700">
                           {status}
                         </td>
-
-                        <td className="px-3 py-2 text-right">
-                          <div className="inline-flex gap-2">
-                            <button
-                              type="button"
-                              disabled={!canConfirm}
-                              onClick={() => onConfirmPayment?.(p)}
-                              className="rounded-md bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
-                            >
-                              Confirm
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => onReversePayment?.(p)}
-                              className="rounded-md bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700"
-                            >
-                              Reverse
-                            </button>
-                          </div>
-                        </td>
+                        {showActions && (
+                          <td className="px-3 py-2 text-right">
+                            <div className="inline-flex gap-2">
+                              {canConfirm && (
+                                <button
+                                  type="button"
+                                  onClick={() => onConfirmPayment?.(p)}
+                                  className="rounded-md bg-green-600 px-3 py-1.5 text-xs text-white hover:bg-green-700 disabled:opacity-50"
+                                >
+                                  Confirm
+                                </button>
+                              )}
+                              <button
+                                type="button"
+                                onClick={() => onReversePayment?.(p)}
+                                className="rounded-md bg-red-600 px-3 py-1.5 text-xs text-white hover:bg-red-700"
+                              >
+                                Reverse
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     );
                   })}

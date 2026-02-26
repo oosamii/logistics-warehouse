@@ -518,7 +518,7 @@ const Invoiced = ({ onOpenInvoice }) => {
         return (
           <div className="flex items-center justify-end gap-2">
             <button
-              onClick={() => onOpenInvoice?.(row.invoiceNo)}
+              onClick={() => onOpenInvoice?.(row.id)}
               className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
               title="View"
               type="button"
