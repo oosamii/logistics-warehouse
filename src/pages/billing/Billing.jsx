@@ -176,8 +176,8 @@ const Billing = () => {
     { id: "rateCards", label: "Rate Cards", component: RateCards },
   ];
 
-  const handleOpenInvoice = (invoiceNo) => {
-    navigate(`/billing/invoices/${encodeURIComponent(invoiceNo)}`);
+  const handleOpenInvoice = (invoiceId) => {
+    navigate(`/billing/invoices/${invoiceId}`);
   };
 
   const getHeaderActions = () => (

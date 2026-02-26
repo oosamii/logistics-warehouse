@@ -30,41 +30,49 @@ const RateCards = () => {
   });
 
   // Fetch rate cards from API
-  const fetchRateCards = useCallback(async (showLoading = true) => {
-    if (showLoading) setLoading(true);
-    try {
-      const params = {
-        client_id: 1,
-        page: pagination.page,
-        limit: pagination.limit,
-      };
+  const fetchRateCards = useCallback(
+    async (showLoading = true) => {
+      if (showLoading) setLoading(true);
+      try {
+        const params = {
+          page: pagination.page,
+          limit: pagination.limit,
+        };
 
-      // Add filters if they exist
-      if (filters.chargeType && filters.chargeType !== "All") {
-        params.charge_type = filters.chargeType;
-      }
-      if (filters.search) {
-        params.search = filters.search;
-      }
+        // Add filters if they exist
+        if (filters.chargeType && filters.chargeType !== "All") {
+          params.charge_type = filters.chargeType;
+        }
+        if (filters.search) {
+          params.search = filters.search;
+        }
 
-      const response = await http.get("/rate-cards/", { params });
-      
-      if (response.data.success) {
-        // Show all rate cards (both active and inactive)
-        setRateCards(response.data.data.rate_cards);
-        setPagination({
-          ...pagination,
-          total: response.data.data.pagination.total,
-          pages: response.data.data.pagination.pages,
-        });
+        const response = await http.get("/rate-cards/", { params });
+
+        if (response.data.success) {
+          // Show all rate cards (both active and inactive)
+          setRateCards(response.data.data.rate_cards);
+          setPagination({
+            ...pagination,
+            total: response.data.data.pagination.total,
+            pages: response.data.data.pagination.pages,
+          });
+        }
+      } catch (error) {
+        console.error("Error fetching rate cards:", error);
+        toast.error("Failed to fetch rate cards");
+      } finally {
+        if (showLoading) setLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching rate cards:", error);
-      toast.error("Failed to fetch rate cards");
-    } finally {
-      if (showLoading) setLoading(false);
-    }
-  }, [filters.chargeType, filters.search, pagination.page, pagination.limit, toast]);
+    },
+    [
+      filters.chargeType,
+      filters.search,
+      pagination.page,
+      pagination.limit,
+      toast,
+    ],
+  );
 
   // Open delete confirmation
   const openDeleteModal = (rateCard) => {
@@ -79,35 +87,43 @@ const RateCards = () => {
     setDeleteLoading(true);
     try {
       const response = await http.delete(`/rate-cards/${rateCardToDelete.id}`);
-      
+
       if (response.data.success) {
-        toast.success(response.data.message || "Rate card deleted successfully");
-        
+        toast.success(
+          response.data.message || "Rate card deleted successfully",
+        );
+
         // Update the card's status in UI to inactive
-        setRateCards(prev => prev.map(card => 
-          card.id === rateCardToDelete.id 
-            ? { ...card, is_active: false }
-            : card
-        ));
-        
+        setRateCards((prev) =>
+          prev.map((card) =>
+            card.id === rateCardToDelete.id
+              ? { ...card, is_active: false }
+              : card,
+          ),
+        );
+
         setDeleteModalOpen(false);
         setRateCardToDelete(null);
       }
     } catch (error) {
       console.error("Error deleting rate card:", error);
-      
+
       if (error.response?.data?.message?.includes("already inactive")) {
         toast.info("This rate card is already inactive");
         // Update the card's status in UI
-        setRateCards(prev => prev.map(card => 
-          card.id === rateCardToDelete.id 
-            ? { ...card, is_active: false }
-            : card
-        ));
+        setRateCards((prev) =>
+          prev.map((card) =>
+            card.id === rateCardToDelete.id
+              ? { ...card, is_active: false }
+              : card,
+          ),
+        );
         setDeleteModalOpen(false);
         setRateCardToDelete(null);
       } else {
-        toast.error(error.response?.data?.message || "Error deleting rate card");
+        toast.error(
+          error.response?.data?.message || "Error deleting rate card",
+        );
       }
     } finally {
       setDeleteLoading(false);
@@ -141,7 +157,7 @@ const RateCards = () => {
   useEffect(() => {
     const timer = setTimeout(() => {
       if (filters.search !== undefined) {
-        setPagination(prev => ({ ...prev, page: 1 }));
+        setPagination((prev) => ({ ...prev, page: 1 }));
       }
     }, 500);
 
@@ -160,7 +176,7 @@ const RateCards = () => {
   // Extract unique charge types from data for filter options
   const chargeTypeOptions = [
     "All",
-    ...new Set(rateCards.map(card => card.charge_type))
+    ...new Set(rateCards.map((card) => card.charge_type)),
   ];
 
   const filterConfig = [
@@ -183,22 +199,30 @@ const RateCards = () => {
   const ChargeTypePill = ({ value }) => {
     const chargeTypeMap = {
       STORAGE: { label: "Storage", color: "bg-blue-50 text-blue-700" },
-      INBOUND_HANDLING: { label: "Inbound", color: "bg-green-50 text-green-700" },
+      INBOUND_HANDLING: {
+        label: "Inbound",
+        color: "bg-green-50 text-green-700",
+      },
       PUTAWAY: { label: "Putaway", color: "bg-green-50 text-green-700" },
       PICKING: { label: "Pick/Pack", color: "bg-orange-50 text-orange-700" },
       PACKING: { label: "Pick/Pack", color: "bg-orange-50 text-orange-700" },
       SHIPPING_ADMIN: { label: "Shipping", color: "bg-gray-100 text-gray-700" },
-      VALUE_ADDED_SERVICE: { label: "Value Added", color: "bg-purple-50 text-purple-700" },
+      VALUE_ADDED_SERVICE: {
+        label: "Value Added",
+        color: "bg-purple-50 text-purple-700",
+      },
       OTHER: { label: "Other", color: "bg-gray-100 text-gray-700" },
     };
 
-    const { label, color } = chargeTypeMap[value] || { 
-      label: value.replace(/_/g, ' '), 
-      color: "bg-gray-100 text-gray-700" 
+    const { label, color } = chargeTypeMap[value] || {
+      label: value.replace(/_/g, " "),
+      color: "bg-gray-100 text-gray-700",
     };
 
     return (
-      <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${color}`}>
+      <span
+        className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${color}`}
+      >
         {label}
       </span>
     );
@@ -220,7 +244,7 @@ const RateCards = () => {
       FLAT_RATE: "Flat Rate",
     };
 
-    return <span>{basisMap[value] || value.replace(/_/g, ' ')}</span>;
+    return <span>{basisMap[value] || value.replace(/_/g, " ")}</span>;
   };
 
   const columns = [
@@ -228,10 +252,12 @@ const RateCards = () => {
       key: "rate_card_name",
       title: "Rate Card Name",
       render: (row) => (
-        <button 
+        <button
           onClick={() => handleEdit(row)}
-          className={`font-semibold ${row.is_active ? 'text-blue-600 hover:text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
-          title={row.is_active ? "Click to edit" : "Click to edit and reactivate"}
+          className={`font-semibold ${row.is_active ? "text-blue-600 hover:text-blue-700" : "text-gray-500 hover:text-gray-700"}`}
+          title={
+            row.is_active ? "Click to edit" : "Click to edit and reactivate"
+          }
         >
           {row.rate_card_name}
         </button>
@@ -247,89 +273,98 @@ const RateCards = () => {
       title: "Basis",
       render: (row) => <BillingBasisPill value={row.billing_basis} />,
     },
-    { 
-      key: "rate", 
+    {
+      key: "rate",
       title: "Rate",
-      render: (row) => `${parseFloat(row.rate).toFixed(2)} ${row.currency}`
+      render: (row) => `${parseFloat(row.rate).toFixed(2)} ${row.currency}`,
     },
-    { 
-      key: "min_charge", 
+    {
+      key: "min_charge",
       title: "Min Charge",
-      render: (row) => `${parseFloat(row.min_charge).toFixed(2)} ${row.currency}`
+      render: (row) =>
+        `${parseFloat(row.min_charge).toFixed(2)} ${row.currency}`,
     },
-    { 
-      key: "effective_from", 
+    {
+      key: "effective_from",
       title: "Effective Period",
       render: (row) => {
-        const from = new Date(row.effective_from).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric' 
+        const from = new Date(row.effective_from).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
         });
-        const to = new Date(row.effective_to).toLocaleDateString('en-US', { 
-          month: 'short', 
-          day: 'numeric',
-          year: 'numeric'
+        const to = new Date(row.effective_to).toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
         });
         return `${from} - ${to}`;
-      }
+      },
     },
     {
       key: "status",
       title: "Status",
       render: (row) => (
-        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
-          row.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
-        }`}>
-          {row.is_active ? 'Active' : 'Inactive'}
+        <span
+          className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+            row.is_active
+              ? "bg-green-50 text-green-700"
+              : "bg-red-50 text-red-700"
+          }`}
+        >
+          {row.is_active ? "Active" : "Inactive"}
         </span>
       ),
     },
-   {
-  key: "actions",
-  title: "Actions",
-  render: (row) => (
-    <div className="flex items-center justify-start gap-2">
-      <button 
-        onClick={() => handleEdit(row)}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-        title="Edit"
-      >
-        <Pencil size={16} />
-      </button>
-      <button 
-        onClick={() => openDeleteModal(row)}
-        className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
-          row.is_active 
-            ? 'border-gray-200 bg-white text-red-600 hover:bg-red-50' 
-            : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
-        }`}
-        title={row.is_active ? "Delete (Mark as Inactive)" : "Cannot delete inactive rate card"}
-        disabled={!row.is_active}
-      >
-        <Trash2 size={16} />
-      </button>
-    </div>
-  ),
-},
+    {
+      key: "actions",
+      title: "Actions",
+      render: (row) => (
+        <div className="flex items-center justify-start gap-2">
+          <button
+            onClick={() => handleEdit(row)}
+            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            title="Edit"
+          >
+            <Pencil size={16} />
+          </button>
+          <button
+            onClick={() => openDeleteModal(row)}
+            className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
+              row.is_active
+                ? "border-gray-200 bg-white text-red-600 hover:bg-red-50"
+                : "border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed"
+            }`}
+            title={
+              row.is_active
+                ? "Delete (Mark as Inactive)"
+                : "Cannot delete inactive rate card"
+            }
+            disabled={!row.is_active}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ),
+    },
   ];
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
     // Reset to first page when filter changes
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleReset = () => {
     setFilters({ chargeType: "All", search: "" });
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handleApply = () => {
-    setPagination(prev => ({ ...prev, page: 1 }));
+    setPagination((prev) => ({ ...prev, page: 1 }));
   };
 
   const handlePageChange = (newPage) => {
-    setPagination(prev => ({ ...prev, page: newPage }));
+    setPagination((prev) => ({ ...prev, page: newPage }));
   };
 
   return (
@@ -367,7 +402,7 @@ const RateCards = () => {
             <>
               <CusTable columns={columns} data={rateCards} />
               {rateCards.length > 0 && (
-                <Pagination 
+                <Pagination
                   pagination={pagination}
                   onPageChange={handlePageChange}
                 />

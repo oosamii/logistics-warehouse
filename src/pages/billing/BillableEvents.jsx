@@ -29,7 +29,7 @@ const BillableEvents = () => {
     period: "This Month",
     warehouse_id: "",
     client_id: "",
-    status: "READY",
+    status: "All",
     charge_type: "",
     date_from: "",
     date_to: "",
