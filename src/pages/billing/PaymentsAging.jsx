@@ -211,12 +211,10 @@ const PaymentsAging = ({ onOpenInvoice }) => {
     search: "",
   });
 
-  // Ledger + Payment modals
   const [showLedger, setShowLedger] = useState(false);
   const [showRecordPay, setShowRecordPay] = useState(false);
-  const [activeClient, setActiveClient] = useState(null); // {id, name, code}
+  const [activeClient, setActiveClient] = useState(null);
 
-  // confirm modal for confirm/reverse
   const [confirm, setConfirm] = useState({
     open: false,
     type: null, // "confirm" | "reverse"
@@ -262,7 +260,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
 
   useEffect(() => {
     loadAging();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterChange = (key, value) => {
@@ -383,7 +380,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
     },
   ];
 
-  // confirm modal
   const openConfirm = (type, payment) => {
     setConfirm({
       open: true,
@@ -441,7 +437,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
           onReset={handleReset}
           onApply={handleApply}
         >
-          {/* Warehouse */}
           <div className="w-full sm:w-[240px]">
             <p className="text-xs text-gray-500 mb-1">Warehouse</p>
             <select
@@ -460,7 +455,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
             </select>
           </div>
 
-          {/* Client */}
           <div className="w-full sm:w-[280px]">
             <p className="text-xs text-gray-500 mb-1">Client</p>
             <PaginatedEntityDropdown
@@ -485,7 +479,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
         <CusTable columns={columns} data={tableData} loading={loadingAging} />
       </div>
 
-      {/* Ledger Modal */}
       <PaymentsLedgerModal
         isOpen={showLedger}
         onClose={() => setShowLedger(false)}
@@ -496,7 +489,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
         onOpenInvoice={(invoiceNo) => onOpenInvoice?.(invoiceNo)}
       />
 
-      {/* Record Payment Modal */}
       <RecordPaymentModal
         isOpen={showRecordPay}
         onClose={() => setShowRecordPay(false)}
@@ -508,7 +500,6 @@ const PaymentsAging = ({ onOpenInvoice }) => {
         }}
       />
 
-      {/* Confirm Confirm/Reverse */}
       <ConfirmActionModal
         isOpen={confirm.open}
         title={

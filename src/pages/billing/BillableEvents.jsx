@@ -6,8 +6,11 @@ import http from "../../api/http";
 import StatCard from "../components/StatCard";
 import PaginatedEntityDropdown from "../inbound/components/asnform/common/PaginatedEntityDropdown";
 import Pagination from "../components/Pagination";
+import { useNavigate } from "react-router-dom";
 
 const BillableEvents = () => {
+  const navigate = useNavigate();
+
   const [warehouses, setWarehouses] = useState([]);
   const [eventsData, setEventsData] = useState([]);
   const [summaryRows, setSummaryRows] = useState([]);
@@ -200,7 +203,10 @@ const BillableEvents = () => {
       key: "reference",
       title: "Reference",
       render: (row) => (
-        <button className="font-semibold text-blue-600 hover:text-blue-700">
+        <button
+          onClick={() => navigate(`/billing/billableEventDetail/${row.id}`)}
+          className="font-semibold text-blue-600 hover:text-blue-700"
+        >
           {row.reference}
         </button>
       ),
@@ -224,7 +230,10 @@ const BillableEvents = () => {
               Fix Rate
             </button>
           ) : (
-            <button className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50">
+            <button
+              onClick={() => navigate(`/billing/billableEventDetail/${row.id}`)}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+            >
               <Eye size={16} />
             </button>
           )}
@@ -286,7 +295,6 @@ const BillableEvents = () => {
       };
     }
 
-    // If a client selected → pick that row
     if (filters.client_id) {
       const row = summaryRows.find(
         (r) => String(r.client_id) === String(filters.client_id),
@@ -294,18 +302,19 @@ const BillableEvents = () => {
       if (row) return { ...row, clients: 1 };
     }
 
-    // Else aggregate all clients
     return summaryRows.reduce(
-      (acc, r) => ({
-        pending_amount: acc.pending_amount + (r.pending_amount || 0),
-        ready_amount: acc.ready_amount + (r.ready_amount || 0),
-        blocked_amount: acc.blocked_amount + (r.blocked_amount || 0),
-        total_unbilled: acc.total_unbilled + (r.total_unbilled || 0),
-        pending_count: acc.pending_count + (r.pending_count || 0),
-        ready_count: acc.ready_count + (r.ready_count || 0),
-        blocked_count: acc.blocked_count + (r.blocked_count || 0),
-        clients: acc.clients + 1,
-      }),
+      (acc, r) => {
+        return {
+          pending_amount: acc.pending_amount + (r.pending_amount || 0),
+          ready_amount: acc.ready_amount + (r.ready_amount || 0),
+          blocked_amount: acc.blocked_amount + (r.blocked_amount || 0),
+          total_unbilled: acc.total_unbilled + (r.total_unbilled || 0),
+          pending_count: acc.pending_count + (r.pending_count || 0),
+          ready_count: acc.ready_count + (r.ready_count || 0),
+          blocked_count: acc.blocked_count + (r.blocked_count || 0),
+          clients: acc.clients + 1,
+        };
+      },
       {
         pending_amount: 0,
         ready_amount: 0,
@@ -343,6 +352,7 @@ const BillableEvents = () => {
       className: "min-w-[320px]",
     },
   ];
+
   return (
     <div className="min-h-screen ">
       <div className="mx-auto max-w-7xl space-y-5">
@@ -390,8 +400,12 @@ const BillableEvents = () => {
           </div>
         </FilterBar>
 
-        {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
+          <StatCard
+            title="Clients"
+            value={filters.client_id ? "Selected" : String(summary.clients)}
+            accentColor="#6b7280"
+          />
           <StatCard
             title="Total Unbilled"
             value={fmtINR(summary.total_unbilled)}
@@ -411,11 +425,6 @@ const BillableEvents = () => {
             title={`Blocked (${summary.blocked_count})`}
             value={fmtINR(summary.blocked_amount)}
             accentColor="#dc2626"
-          />
-          <StatCard
-            title="Clients"
-            value={filters.client_id ? "Selected" : String(summary.clients)}
-            accentColor="#6b7280"
           />
         </div>
 
