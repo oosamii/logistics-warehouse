@@ -1,10 +1,15 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useCallback } from "react";
 import FilterBar from "../components/FilterBar";
 import CusTable from "../components/CusTable";
-import { Download, Plus, Play, Pencil, Copy } from "lucide-react";
+import Pagination from "../components/Pagination";
+import RateCardModal from "./components/RateCardModal";
+import ConfirmDeleteModal from "../components/modals/ConfirmDeleteModal";
+import { Plus, Pencil, Trash2 } from "lucide-react";
+import { useToast } from "../components/toast/ToastProvider";
 import http from "../../api/http";
 
 const RateCards = () => {
+  const toast = useToast();
   const [activeTab, setActiveTab] = useState("rate");
   const [filters, setFilters] = useState({
     chargeType: "",
@@ -12,6 +17,11 @@ const RateCards = () => {
   });
   const [rateCards, setRateCards] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedRateCard, setSelectedRateCard] = useState(null);
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [rateCardToDelete, setRateCardToDelete] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [pagination, setPagination] = useState({
     page: 1,
     total: 0,
@@ -20,8 +30,8 @@ const RateCards = () => {
   });
 
   // Fetch rate cards from API
-  const fetchRateCards = async () => {
-    setLoading(true);
+  const fetchRateCards = useCallback(async (showLoading = true) => {
+    if (showLoading) setLoading(true);
     try {
       const params = {
         client_id: 1,
@@ -40,6 +50,7 @@ const RateCards = () => {
       const response = await http.get("/rate-cards/", { params });
       
       if (response.data.success) {
+        // Show all rate cards (both active and inactive)
         setRateCards(response.data.data.rate_cards);
         setPagination({
           ...pagination,
@@ -49,23 +60,88 @@ const RateCards = () => {
       }
     } catch (error) {
       console.error("Error fetching rate cards:", error);
-      // You might want to show an error toast here
+      toast.error("Failed to fetch rate cards");
     } finally {
-      setLoading(false);
+      if (showLoading) setLoading(false);
     }
+  }, [filters.chargeType, filters.search, pagination.page, pagination.limit, toast]);
+
+  // Open delete confirmation
+  const openDeleteModal = (rateCard) => {
+    setRateCardToDelete(rateCard);
+    setDeleteModalOpen(true);
+  };
+
+  // Delete rate card
+  const handleDelete = async () => {
+    if (!rateCardToDelete) return;
+
+    setDeleteLoading(true);
+    try {
+      const response = await http.delete(`/rate-cards/${rateCardToDelete.id}`);
+      
+      if (response.data.success) {
+        toast.success(response.data.message || "Rate card deleted successfully");
+        
+        // Update the card's status in UI to inactive
+        setRateCards(prev => prev.map(card => 
+          card.id === rateCardToDelete.id 
+            ? { ...card, is_active: false }
+            : card
+        ));
+        
+        setDeleteModalOpen(false);
+        setRateCardToDelete(null);
+      }
+    } catch (error) {
+      console.error("Error deleting rate card:", error);
+      
+      if (error.response?.data?.message?.includes("already inactive")) {
+        toast.info("This rate card is already inactive");
+        // Update the card's status in UI
+        setRateCards(prev => prev.map(card => 
+          card.id === rateCardToDelete.id 
+            ? { ...card, is_active: false }
+            : card
+        ));
+        setDeleteModalOpen(false);
+        setRateCardToDelete(null);
+      } else {
+        toast.error(error.response?.data?.message || "Error deleting rate card");
+      }
+    } finally {
+      setDeleteLoading(false);
+    }
+  };
+
+  // Handle modal success
+  const handleModalSuccess = (message) => {
+    toast.success(message);
+    fetchRateCards(false);
+  };
+
+  // Handle edit
+  const handleEdit = (rateCard) => {
+    setSelectedRateCard(rateCard);
+    setModalOpen(true);
+  };
+
+  // Handle new rate card
+  const handleNewRateCard = () => {
+    setSelectedRateCard(null);
+    setModalOpen(true);
   };
 
   // Fetch on component mount and when filters/pagination changes
   useEffect(() => {
     fetchRateCards();
-  }, [filters.chargeType, filters.search, pagination.page]);
+  }, [fetchRateCards]);
 
   // Debounce search to avoid too many API calls
   useEffect(() => {
     const timer = setTimeout(() => {
       if (filters.search !== undefined) {
-        setPagination(prev => ({ ...prev, page: 1 })); // Reset to first page on search
-        fetchRateCards();
+        setPagination(prev => ({ ...prev, page: 1 }));
       }
     }, 500);
 
@@ -105,7 +181,6 @@ const RateCards = () => {
   ];
 
   const ChargeTypePill = ({ value }) => {
-    // Map API charge types to display names and colors
     const chargeTypeMap = {
       STORAGE: { label: "Storage", color: "bg-blue-50 text-blue-700" },
       INBOUND_HANDLING: { label: "Inbound", color: "bg-green-50 text-green-700" },
@@ -113,6 +188,8 @@ const RateCards = () => {
       PICKING: { label: "Pick/Pack", color: "bg-orange-50 text-orange-700" },
       PACKING: { label: "Pick/Pack", color: "bg-orange-50 text-orange-700" },
       SHIPPING_ADMIN: { label: "Shipping", color: "bg-gray-100 text-gray-700" },
+      VALUE_ADDED_SERVICE: { label: "Value Added", color: "bg-purple-50 text-purple-700" },
+      OTHER: { label: "Other", color: "bg-gray-100 text-gray-700" },
     };
 
     const { label, color } = chargeTypeMap[value] || { 
@@ -133,9 +210,14 @@ const RateCards = () => {
       PER_UNIT_PER_DAY: "Per Unit / Day",
       PER_PALLET: "Per Pallet",
       PER_PALLET_PER_DAY: "Per Pallet / Day",
-      PER_SHIPMENT: "Per Shipment",
+      PER_SQFT_PER_DAY: "Per Sq Ft / Day",
+      PER_CASE: "Per Case",
+      PER_LINE: "Per Line",
       PER_ORDER: "Per Order",
+      PER_CARTON: "Per Carton",
+      PER_SHIPMENT: "Per Shipment",
       PER_KG: "Per KG",
+      FLAT_RATE: "Flat Rate",
     };
 
     return <span>{basisMap[value] || value.replace(/_/g, ' ')}</span>;
@@ -146,7 +228,11 @@ const RateCards = () => {
       key: "rate_card_name",
       title: "Rate Card Name",
       render: (row) => (
-        <button className="font-semibold text-blue-600 hover:text-blue-700">
+        <button 
+          onClick={() => handleEdit(row)}
+          className={`font-semibold ${row.is_active ? 'text-blue-600 hover:text-blue-700' : 'text-gray-500 hover:text-gray-700'}`}
+          title={row.is_active ? "Click to edit" : "Click to edit and reactivate"}
+        >
           {row.rate_card_name}
         </button>
       ),
@@ -164,42 +250,73 @@ const RateCards = () => {
     { 
       key: "rate", 
       title: "Rate",
-      render: (row) => parseFloat(row.rate).toFixed(2)
+      render: (row) => `${parseFloat(row.rate).toFixed(2)} ${row.currency}`
     },
-    { key: "currency", title: "Currency" },
+    { 
+      key: "min_charge", 
+      title: "Min Charge",
+      render: (row) => `${parseFloat(row.min_charge).toFixed(2)} ${row.currency}`
+    },
     { 
       key: "effective_from", 
-      title: "Effective From",
-      render: (row) => new Date(row.effective_from).toLocaleDateString('en-US', { 
-        year: 'numeric', 
-        month: 'short', 
-        day: 'numeric' 
-      })
+      title: "Effective Period",
+      render: (row) => {
+        const from = new Date(row.effective_from).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric' 
+        });
+        const to = new Date(row.effective_to).toLocaleDateString('en-US', { 
+          month: 'short', 
+          day: 'numeric',
+          year: 'numeric'
+        });
+        return `${from} - ${to}`;
+      }
     },
     {
-      key: "actions",
-      title: "Actions",
+      key: "status",
+      title: "Status",
       render: (row) => (
-        <div className="flex items-center justify-start gap-2">
-          <button 
-            onClick={() => handleEdit(row)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-          >
-            <Pencil size={16} />
-          </button>
-          <button 
-            onClick={() => handleDuplicate(row)}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
-          >
-            <Copy size={16} />
-          </button>
-        </div>
+        <span className={`inline-flex rounded-full px-3 py-1 text-xs font-semibold ${
+          row.is_active ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+        }`}>
+          {row.is_active ? 'Active' : 'Inactive'}
+        </span>
       ),
     },
+   {
+  key: "actions",
+  title: "Actions",
+  render: (row) => (
+    <div className="flex items-center justify-start gap-2">
+      <button 
+        onClick={() => handleEdit(row)}
+        className="inline-flex h-9 w-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-gray-700 hover:bg-gray-50"
+        title="Edit"
+      >
+        <Pencil size={16} />
+      </button>
+      <button 
+        onClick={() => openDeleteModal(row)}
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-lg border ${
+          row.is_active 
+            ? 'border-gray-200 bg-white text-red-600 hover:bg-red-50' 
+            : 'border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed'
+        }`}
+        title={row.is_active ? "Delete (Mark as Inactive)" : "Cannot delete inactive rate card"}
+        disabled={!row.is_active}
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  ),
+},
   ];
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    // Reset to first page when filter changes
+    setPagination(prev => ({ ...prev, page: 1 }));
   };
 
   const handleReset = () => {
@@ -209,17 +326,6 @@ const RateCards = () => {
 
   const handleApply = () => {
     setPagination(prev => ({ ...prev, page: 1 }));
-    fetchRateCards();
-  };
-
-  const handleEdit = (rateCard) => {
-    console.log("Edit rate card:", rateCard);
-    // Navigate to edit page or open modal
-  };
-
-  const handleDuplicate = (rateCard) => {
-    console.log("Duplicate rate card:", rateCard);
-    // Handle duplication logic
   };
 
   const handlePageChange = (newPage) => {
@@ -241,7 +347,10 @@ const RateCards = () => {
               />
             </div>
 
-            <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700">
+            <button
+              onClick={handleNewRateCard}
+              className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
+            >
               <Plus size={16} />
               New Rate Card
             </button>
@@ -255,19 +364,46 @@ const RateCards = () => {
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
             </div>
           ) : (
-            <CusTable 
-              columns={columns} 
-              data={rateCards} 
-              pagination={{
-                currentPage: pagination.page,
-                totalPages: pagination.pages,
-                totalItems: pagination.total,
-                onPageChange: handlePageChange,
-              }}
-            />
+            <>
+              <CusTable columns={columns} data={rateCards} />
+              {rateCards.length > 0 && (
+                <Pagination 
+                  pagination={pagination}
+                  onPageChange={handlePageChange}
+                />
+              )}
+              {rateCards.length === 0 && !loading && (
+                <div className="text-center py-12 text-gray-500">
+                  No rate cards found
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>
+
+      {/* Rate Card Modal */}
+      <RateCardModal
+        isOpen={modalOpen}
+        onClose={() => setModalOpen(false)}
+        onSuccess={handleModalSuccess}
+        rateCard={selectedRateCard}
+      />
+
+      {/* Delete Confirmation Modal */}
+      <ConfirmDeleteModal
+        open={deleteModalOpen}
+        title="Deactivate Rate Card"
+        message={`Are you sure you want to deactivate "${rateCardToDelete?.rate_card_name}"? This will mark it as inactive. You can reactivate it through edit.`}
+        confirmText="Deactivate"
+        cancelText="Cancel"
+        loading={deleteLoading}
+        onClose={() => {
+          setDeleteModalOpen(false);
+          setRateCardToDelete(null);
+        }}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 };
