@@ -17,7 +17,6 @@ const Billing = () => {
 
   const [showManualChargeModal, setShowManualChargeModal] = useState(false);
 
-  // Tabs configuration
   const tabs = [
     {
       id: "billableEvents",
@@ -38,17 +37,14 @@ const Billing = () => {
     { id: "rateCards", label: "Rate Cards", component: RateCards },
   ];
 
-  // Handle opening invoice detail
   const handleOpenInvoice = (invoiceNo) => {
     setSelectedInvoice(invoiceNo);
   };
 
-  // Handle going back from invoice detail
   const handleBackFromDetail = () => {
     setSelectedInvoice(null);
   };
 
-  // Header actions based on active tab
   const getHeaderActions = () => {
     const baseActions = (
       <div className="flex gap-3">
@@ -85,10 +81,8 @@ const Billing = () => {
     return baseActions;
   };
 
-  // Get active component
   const ActiveComponent = tabs.find((tab) => tab.id === activeTab)?.component;
 
-  // If an invoice is selected, show the detail page
   if (selectedInvoice) {
     return (
       <InvoiceDetail
@@ -103,11 +97,6 @@ const Billing = () => {
       <PageHeader
         title="WMS Billing"
         subtitle="Convert warehouse activities into invoices"
-        breadcrumbs={[
-          { label: "Home", href: "/" },
-          { label: "Finance", href: "/finance" },
-          { label: "Billing" },
-        ]}
         actions={getHeaderActions()}
       />
 

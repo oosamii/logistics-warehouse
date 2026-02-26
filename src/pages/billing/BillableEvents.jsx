@@ -1,18 +1,146 @@
-import React, { useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import FilterBar from "../components/FilterBar";
 import CusTable from "../components/CusTable";
 import { Download, Plus, Play, Eye } from "lucide-react";
+import http from "../../api/http";
+import StatCard from "../components/StatCard";
+import PaginatedEntityDropdown from "../inbound/components/asnform/common/PaginatedEntityDropdown";
+import Pagination from "../components/Pagination";
 
 const BillableEvents = () => {
+  const [warehouses, setWarehouses] = useState([]);
+  const [eventsData, setEventsData] = useState([]);
+  const [summaryRows, setSummaryRows] = useState([]);
+  const [loadingEvents, setLoadingEvents] = useState(false);
+  const [loadingSummary, setLoadingSummary] = useState(false);
+  const [activeTab, setActiveTab] = useState("billable");
+
+  const [eventsPagination, setEventsPagination] = useState({
+    total: 0,
+    page: 1,
+    pages: 1,
+    limit: 10,
+  });
+
   const [filters, setFilters] = useState({
     period: "This Month",
-    warehouse: "WH-NYC-01",
-    clients: "All Clients",
-    status: "All",
+    warehouse_id: "",
+    client_id: "",
+    status: "READY",
+    charge_type: "",
+    date_from: "",
+    date_to: "",
     search: "",
   });
 
-  // Tabs (UI only for now)
+  const getRangeFromPeriod = (period) => {
+    const now = new Date();
+    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+
+    const toYMD = (d) => d.toISOString().slice(0, 10);
+
+    if (period === "This Month") {
+      return { date_from: toYMD(startOfMonth), date_to: toYMD(endOfMonth) };
+    }
+    if (period === "Last Month") {
+      const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const e = new Date(now.getFullYear(), now.getMonth(), 0);
+      return { date_from: toYMD(s), date_to: toYMD(e) };
+    }
+    if (period === "This Quarter") {
+      const q = Math.floor(now.getMonth() / 3);
+      const s = new Date(now.getFullYear(), q * 3, 1);
+      const e = new Date(now.getFullYear(), q * 3 + 3, 0);
+      return { date_from: toYMD(s), date_to: toYMD(e) };
+    }
+    return { date_from: "", date_to: "" }; // Custom Range handled by UI
+  };
+
+  useEffect(() => {
+    const loadWarehouses = async () => {
+      try {
+        const res = await http.get("/warehouses");
+        const list = res?.data?.data || [];
+        setWarehouses(
+          Array.isArray(list) ? list.filter((w) => w.is_active) : [],
+        );
+      } catch {
+        setWarehouses([]);
+      }
+    };
+
+    loadWarehouses();
+  }, []);
+
+  const loadSummary = async () => {
+    setLoadingSummary(true);
+    try {
+      const res = await http.get("/billable-events/summary");
+      setSummaryRows(res?.data?.data || []);
+    } catch {
+      setSummaryRows([]);
+    } finally {
+      setLoadingSummary(false);
+    }
+  };
+
+  const buildEventsParams = (page = 1) => {
+    const params = new URLSearchParams();
+
+    params.set("page", String(page));
+    params.set("limit", String(eventsPagination.limit || 20));
+
+    const range =
+      filters.period === "Custom Range"
+        ? { date_from: filters.date_from, date_to: filters.date_to }
+        : getRangeFromPeriod(filters.period);
+
+    if (filters.client_id) params.set("client_id", filters.client_id);
+    if (filters.warehouse_id) params.set("warehouse_id", filters.warehouse_id);
+
+    if (filters.status && filters.status !== "All")
+      params.set("status", filters.status);
+
+    if (filters.charge_type) params.set("charge_type", filters.charge_type);
+
+    if (range.date_from) params.set("date_from", range.date_from);
+    if (range.date_to) params.set("date_to", range.date_to);
+
+    if (filters.search?.trim()) params.set("search", filters.search.trim());
+
+    return params.toString();
+  };
+
+  const loadEvents = async (page = 1) => {
+    setLoadingEvents(true);
+    try {
+      const qs = buildEventsParams(page);
+      const res = await http.get(`/billable-events/?${qs}`);
+
+      const list = res?.data?.data?.billable_events || [];
+      const pag = res?.data?.data?.pagination || {};
+
+      setEventsData(Array.isArray(list) ? list : []);
+      setEventsPagination({
+        total: pag.total ?? 0,
+        page: pag.page ?? page,
+        pages: pag.pages ?? 1,
+        limit: pag.limit ?? (eventsPagination.limit || 20),
+      });
+    } catch {
+      setEventsData([]);
+      setEventsPagination({ total: 0, page: 1, pages: 1, limit: 20 });
+    } finally {
+      setLoadingEvents(false);
+    }
+  };
+
+  useEffect(() => {
+    loadSummary();
+    loadEvents(1);
+  }, []);
+
   const tabs = [
     { id: "billable", label: "Billable Events" },
     { id: "ready", label: "Ready to Invoice" },
@@ -20,44 +148,7 @@ const BillableEvents = () => {
     { id: "payments", label: "Payments / Aging" },
     { id: "rate", label: "Rate Cards" },
   ];
-  const [activeTab, setActiveTab] = useState("billable");
 
-  const filterConfig = [
-    {
-      key: "period",
-      label: "",
-      value: filters.period,
-      options: ["This Month", "Last Month", "This Quarter", "Custom Range"],
-    },
-    {
-      key: "warehouse",
-      label: "",
-      value: filters.warehouse,
-      options: ["WH-NYC-01", "WH-LA-02", "WH-CHI-03"],
-    },
-    {
-      key: "clients",
-      label: "",
-      value: filters.clients,
-      options: ["All Clients", "Acme Retail", "Global Foods", "TechSource"],
-    },
-    {
-      key: "status",
-      label: "",
-      value: filters.status,
-      options: ["All", "Pending", "Ready", "Blocked"],
-    },
-    {
-      key: "search",
-      type: "search",
-      label: "",
-      placeholder: "Search Invoice, Order, ASN...",
-      value: filters.search,
-      className: "min-w-[320px]",
-    },
-  ];
-
-  // Stats cards data (match Figma)
   const statsCards = [
     { title: "Storage Charges", amount: "₹45,200", status: "Pending" },
     { title: "Handling Charges", amount: "₹12,450", status: "Inbound pending" },
@@ -72,76 +163,6 @@ const BillableEvents = () => {
       amount: "24",
       status: "Missing rate cards",
       danger: true,
-    },
-  ];
-
-  // Events data
-  const eventsData = [
-    {
-      id: 1,
-      eventId: "EVT-9001",
-      type: "Storage",
-      reference: "Daily - Oct 24",
-      customer: "Acme Retail",
-      basis: "450 Pallets",
-      rate: "₹20/pallet",
-      amount: "₹9,000",
-      status: "Pending",
-    },
-    {
-      id: 2,
-      eventId: "EVT-9002",
-      type: "Inbound",
-      reference: "ASN-2024-088",
-      customer: "Global Foods",
-      basis: "240 Units",
-      rate: "₹2/unit",
-      amount: "₹480",
-      status: "Ready",
-    },
-    {
-      id: 3,
-      eventId: "EVT-9005",
-      type: "Picking",
-      reference: "ORD-10045",
-      customer: "TechSource",
-      basis: "12 Lines",
-      rate: "-",
-      amount: "-",
-      status: "Blocked",
-    },
-    {
-      id: 4,
-      eventId: "EVT-9008",
-      type: "Packing",
-      reference: "ORD-10045",
-      customer: "TechSource",
-      basis: "4 Cartons",
-      rate: "₹50/carton",
-      amount: "₹200",
-      status: "Pending",
-    },
-    {
-      id: 5,
-      eventId: "EVT-9012",
-      type: "Shipping",
-      reference: "SHP-9901",
-      customer: "Acme Retail",
-      basis: "1 Shipment",
-      rate: "₹150",
-      amount: "₹150",
-      status: "Pending",
-    },
-    {
-      id: 6,
-      eventId: "EVT-9015",
-      type: "Putaway",
-      reference: "GRN-5502",
-      customer: "Urban Styles",
-      basis: "500 Units",
-      rate: "₹1.5/unit",
-      amount: "₹750",
-      status: "Ready",
     },
   ];
 
@@ -217,67 +238,200 @@ const BillableEvents = () => {
   };
 
   const handleReset = () => {
-    setFilters({
+    const next = {
       period: "This Month",
-      warehouse: "WH-NYC-01",
-      clients: "All Clients",
-      status: "All",
+      warehouse_id: "",
+      client_id: "",
+      status: "READY",
+      charge_type: "",
+      date_from: "",
+      date_to: "",
       search: "",
-    });
+    };
+    setFilters(next);
+    setTimeout(() => loadEvents(), 0);
   };
+  const handleApply = () => loadEvents(1);
 
-  const handleApply = () => {
-    console.log("Filters applied:", filters);
-  };
+  const tableData = useMemo(() => {
+    return eventsData.map((e) => ({
+      id: e.id,
+      eventId: e.event_id,
+      type: e.charge_type, // or prettify
+      reference: e.reference_no,
+      customer: e.client?.client_name || "-",
+      basis: `${e.qty} (${e.billing_basis || "-"})`,
+      rate: e.rate ? `₹${e.rate}` : "-",
+      amount: e.amount ? `₹${e.amount}` : "-",
+      status:
+        e.status === "READY"
+          ? "Ready"
+          : e.status === "BLOCKED"
+            ? "Blocked"
+            : "Pending",
+    }));
+  }, [eventsData]);
 
+  const summary = useMemo(() => {
+    if (!summaryRows.length) {
+      return {
+        pending_amount: 0,
+        ready_amount: 0,
+        blocked_amount: 0,
+        total_unbilled: 0,
+        pending_count: 0,
+        ready_count: 0,
+        blocked_count: 0,
+        clients: 0,
+      };
+    }
+
+    // If a client selected → pick that row
+    if (filters.client_id) {
+      const row = summaryRows.find(
+        (r) => String(r.client_id) === String(filters.client_id),
+      );
+      if (row) return { ...row, clients: 1 };
+    }
+
+    // Else aggregate all clients
+    return summaryRows.reduce(
+      (acc, r) => ({
+        pending_amount: acc.pending_amount + (r.pending_amount || 0),
+        ready_amount: acc.ready_amount + (r.ready_amount || 0),
+        blocked_amount: acc.blocked_amount + (r.blocked_amount || 0),
+        total_unbilled: acc.total_unbilled + (r.total_unbilled || 0),
+        pending_count: acc.pending_count + (r.pending_count || 0),
+        ready_count: acc.ready_count + (r.ready_count || 0),
+        blocked_count: acc.blocked_count + (r.blocked_count || 0),
+        clients: acc.clients + 1,
+      }),
+      {
+        pending_amount: 0,
+        ready_amount: 0,
+        blocked_amount: 0,
+        total_unbilled: 0,
+        pending_count: 0,
+        ready_count: 0,
+        blocked_count: 0,
+        clients: 0,
+      },
+    );
+  }, [summaryRows, filters.client_id]);
+
+  const fmtINR = (n) => `₹${Number(n || 0).toLocaleString("en-IN")}`;
+
+  const filterConfig = [
+    {
+      key: "period",
+      label: "Period",
+      value: filters.period,
+      options: ["This Month", "Last Month", "This Quarter", "Custom Range"],
+    },
+    {
+      key: "status",
+      label: "Status",
+      value: filters.status,
+      options: ["All", "PENDING", "READY", "BLOCKED"],
+    },
+    {
+      key: "search",
+      type: "search",
+      label: "Search",
+      placeholder: "Search reference/event…",
+      value: filters.search,
+      className: "min-w-[320px]",
+    },
+  ];
   return (
     <div className="min-h-screen ">
       <div className="mx-auto max-w-7xl space-y-5">
-        {/* FilterBar (uses your component) */}
-        <div className="rounded-xl border border-gray-200 bg-white p-3">
-          <FilterBar
-            filters={filterConfig}
-            onFilterChange={handleFilterChange}
-            onReset={handleReset}
-            onApply={handleApply}
-          />
-        </div>
+        <FilterBar
+          filters={filterConfig}
+          onFilterChange={handleFilterChange}
+          onReset={handleReset}
+          onApply={handleApply}
+        >
+          <div className="w-full sm:w-[220px]">
+            <p className="text-xs text-gray-500 mb-1">Warehouse</p>
+            <select
+              value={filters.warehouse_id}
+              onChange={(e) =>
+                handleFilterChange("warehouse_id", e.target.value)
+              }
+              className="w-full rounded-md border border-gray-200 bg-white px-3 py-2 text-sm
+                 focus:outline-none focus:ring-2 focus:ring-blue-100"
+            >
+              <option value="">All Warehouses</option>
+              {warehouses.map((w) => (
+                <option key={w.id} value={w.id}>
+                  {w.warehouse_name} ({w.warehouse_code})
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="w-full sm:w-[260px]">
+            <p className="text-xs text-gray-500 mb-1">Client</p>
+            <PaginatedEntityDropdown
+              endpoint="/clients"
+              listKey="clients"
+              value={filters.client_id}
+              onChange={(id) => handleFilterChange("client_id", id)}
+              placeholder="All Clients"
+              limit={10}
+              enableSearch
+              searchParam="search"
+              renderItem={(c) => ({
+                title: `${c.client_name} (${c.client_code})`,
+                subtitle: c.email || c.phone || "",
+              })}
+            />
+          </div>
+        </FilterBar>
 
         {/* Stats Cards */}
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-5">
-          {statsCards.map((stat, index) => (
-            <div
-              key={index}
-              className={`rounded-xl border p-4 ${
-                stat.danger
-                  ? "border-red-200 bg-red-50"
-                  : "border-gray-200 bg-white"
-              }`}
-            >
-              <p
-                className={`text-sm font-medium ${
-                  stat.danger ? "text-red-700" : "text-gray-500"
-                }`}
-              >
-                {stat.title}
-              </p>
-              <p className="mt-2 text-2xl font-bold text-gray-900">
-                {stat.amount}
-              </p>
-              <p
-                className={`mt-1 text-sm ${
-                  stat.danger ? "text-red-600" : "text-gray-500"
-                }`}
-              >
-                {stat.status}
-              </p>
-            </div>
-          ))}
+          <StatCard
+            title="Total Unbilled"
+            value={fmtINR(summary.total_unbilled)}
+            accentColor="#111827"
+          />
+          <StatCard
+            title={`Ready (${summary.ready_count})`}
+            value={fmtINR(summary.ready_amount)}
+            accentColor="#16a34a"
+          />
+          <StatCard
+            title={`Pending (${summary.pending_count})`}
+            value={fmtINR(summary.pending_amount)}
+            accentColor="#2563eb"
+          />
+          <StatCard
+            title={`Blocked (${summary.blocked_count})`}
+            value={fmtINR(summary.blocked_amount)}
+            accentColor="#dc2626"
+          />
+          <StatCard
+            title="Clients"
+            value={filters.client_id ? "Selected" : String(summary.clients)}
+            accentColor="#6b7280"
+          />
         </div>
 
-        {/* Table */}
         <div className="rounded-xl border border-gray-200 bg-white">
-          <CusTable columns={columns} data={eventsData} />
+          <CusTable
+            columns={columns}
+            data={tableData}
+            loading={loadingEvents}
+          />
+
+          <div className="border-t border-gray-200">
+            <Pagination
+              pagination={eventsPagination}
+              onPageChange={(p) => loadEvents(p)}
+            />
+          </div>
         </div>
       </div>
     </div>
