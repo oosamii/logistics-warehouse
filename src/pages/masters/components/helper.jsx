@@ -55,8 +55,9 @@ export const Field = ({
 
 export const Modal = ({ title, subtitle, onClose, children, footer }) => (
   <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/30 p-4">
-    <div className="w-full max-w-xl rounded-lg bg-white p-5 shadow-lg">
-      <div className="mb-4 flex items-start justify-between">
+    <div className="w-full max-w-xl rounded-lg bg-white shadow-lg overflow-hidden flex flex-col max-h-[90vh]">
+      {/* Header */}
+      <div className="flex items-start justify-between border-b px-5 py-4">
         <div>
           <h3 className="text-lg font-semibold text-gray-900">{title}</h3>
           {subtitle && <p className="text-sm text-gray-500">{subtitle}</p>}
@@ -69,9 +70,13 @@ export const Modal = ({ title, subtitle, onClose, children, footer }) => (
         </button>
       </div>
 
-      {children}
+      {/* Body (scroll happens here) */}
+      <div className="flex-1 overflow-y-auto px-5 py-4">{children}</div>
 
-      <div className="mt-5 flex items-center justify-end gap-3">{footer}</div>
+      {/* Footer */}
+      <div className="border-t px-5 py-4 flex items-center justify-end gap-3">
+        {footer}
+      </div>
     </div>
   </div>
 );

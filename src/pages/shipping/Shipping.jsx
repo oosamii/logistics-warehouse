@@ -49,10 +49,10 @@ const Shipping = () => {
             <Download size={16} />
             Export
           </button>
-          <button className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          {/* <button className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
             <Plus size={16} />
             Create Shipment
-          </button>
+          </button> */}
         </div>
       );
     }
@@ -64,10 +64,10 @@ const Shipping = () => {
             <Download size={16} />
             Export
           </button>
-          <button className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+          {/* <button className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
             <Plus size={16} />
             Create Exception
-          </button>
+          </button> */}
         </div>
       );
     }
@@ -322,11 +322,11 @@ const Shipping = () => {
       <PageHeader
         title="Shipping"
         subtitle="Dispatch packed orders and manage carrier shipments"
-        breadcrumbs={[
-          { label: "Home", href: "/" },
-          { label: "Operations", href: "/operations" },
-          { label: "Shipping" },
-        ]}
+        // breadcrumbs={[
+        //   { label: "Home", href: "/" },
+        //   { label: "Operations", href: "/operations" },
+        //   { label: "Shipping" },
+        // ]}
         actions={getHeaderActions()}
       />
 

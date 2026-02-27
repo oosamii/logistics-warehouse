@@ -13,7 +13,7 @@ const PackingCompleted = ({ onOrderSelect }) => {
     carrier: "All",
     search: "",
   });
-  
+
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -21,25 +21,28 @@ const PackingCompleted = ({ onOrderSelect }) => {
     total: 0,
     page: 1,
     pages: 1,
-    limit: 10
+    limit: 10,
   });
 
   // Fetch orders from API
   const fetchOrders = async (page = 1) => {
     setLoading(true);
     setError(null);
-    
+
     try {
-      const response = await http.get('/sales-orders/', {
+      const response = await http.get("/sales-orders/", {
         params: {
-          status: 'PACKED',
+          status: "PACKED",
           page: page,
           limit: pagination.limit,
           ...(filters.search && { search: filters.search }),
-          ...(filters.warehouse && filters.warehouse !== 'All' && { warehouse_id: filters.warehouse }),
-          ...(filters.client && filters.client !== 'All' && { client_id: filters.client }),
-          ...(filters.carrier && filters.carrier !== 'All' && { carrier: filters.carrier })
-        }
+          ...(filters.warehouse &&
+            filters.warehouse !== "All" && { warehouse_id: filters.warehouse }),
+          ...(filters.client &&
+            filters.client !== "All" && { client_id: filters.client }),
+          ...(filters.carrier &&
+            filters.carrier !== "All" && { carrier: filters.carrier }),
+        },
       });
 
       if (response.data) {
@@ -48,7 +51,7 @@ const PackingCompleted = ({ onOrderSelect }) => {
           total: response.data.total || 0,
           page: response.data.page || 1,
           pages: response.data.pages || 1,
-          limit: pagination.limit
+          limit: pagination.limit,
         });
       }
     } catch (err) {
@@ -66,34 +69,40 @@ const PackingCompleted = ({ onOrderSelect }) => {
 
   // Transform API data to match table structure
   const transformOrderData = (orders) => {
-    return orders.map(order => {
+    return orders.map((order) => {
       // Calculate cartons count (this would ideally come from a cartons API)
       // For now, we'll estimate based on packed units or use a placeholder
-      const cartonsCount = order.cartons_count || Math.ceil(parseFloat(order.total_packed_units || 0) / 10) || 1;
-      
+      const cartonsCount =
+        order.cartons_count ||
+        Math.ceil(parseFloat(order.total_packed_units || 0) / 10) ||
+        1;
+
       // Calculate total weight from line items if available
-      const totalWeight = order.lines?.reduce((sum, line) => {
-        const lineWeight = parseFloat(line.sku?.weight || 0) * parseFloat(line.packed_qty || 0);
-        return sum + lineWeight;
-      }, 0) || 0;
+      const totalWeight =
+        order.lines?.reduce((sum, line) => {
+          const lineWeight =
+            parseFloat(line.sku?.weight || 0) *
+            parseFloat(line.packed_qty || 0);
+          return sum + lineWeight;
+        }, 0) || 0;
 
       // Format packing completed time
       const formatCompletedTime = () => {
         if (!order.packing_completed_at) return "-";
-        
+
         const completedDate = new Date(order.packing_completed_at);
         const now = new Date();
         const isToday = completedDate.toDateString() === now.toDateString();
-        
+
         if (isToday) {
-          return `Today ${completedDate.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true })}`;
+          return `Today ${completedDate.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit", hour12: true })}`;
         } else {
-          return completedDate.toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric',
-            hour: 'numeric', 
-            minute: '2-digit',
-            hour12: true 
+          return completedDate.toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
           });
         }
       };
@@ -102,7 +111,8 @@ const PackingCompleted = ({ onOrderSelect }) => {
         id: order.id,
         orderNo: order.order_no,
         client: order.client?.client_name || `Client #${order.client_id}`,
-        warehouse: order.warehouse?.warehouse_code || `WH-${order.warehouse_id}`,
+        warehouse:
+          order.warehouse?.warehouse_code || `WH-${order.warehouse_id}`,
         cartons: cartonsCount,
         totalWeight: totalWeight > 0 ? `${totalWeight.toFixed(1)} kg` : "-",
         carrier: order.carrier || "Not Assigned",
@@ -114,25 +124,39 @@ const PackingCompleted = ({ onOrderSelect }) => {
         shipToCity: order.ship_to_city,
         referenceNo: order.reference_no,
         trackingNumber: order.tracking_number,
-        originalOrder: order
+        originalOrder: order,
       };
     });
   };
 
   // Get unique filter options from data
   const getWarehouseOptions = () => {
-    const uniqueWarehouses = [...new Set(orders.map(o => o.warehouse?.warehouse_code || `WH-${o.warehouse_id}`))];
-    return ['All', ...uniqueWarehouses];
+    const uniqueWarehouses = [
+      ...new Set(
+        orders.map(
+          (o) => o.warehouse?.warehouse_code || `WH-${o.warehouse_id}`,
+        ),
+      ),
+    ];
+    return ["All", ...uniqueWarehouses];
   };
 
   const getClientOptions = () => {
-    const uniqueClients = [...new Set(orders.map(o => o.client?.client_name || `Client #${o.client_id}`))];
-    return ['All', ...uniqueClients];
+    const uniqueClients = [
+      ...new Set(
+        orders.map((o) => o.client?.client_name || `Client #${o.client_id}`),
+      ),
+    ];
+    return ["All", ...uniqueClients];
   };
 
   const getCarrierOptions = () => {
-    const uniqueCarriers = [...new Set(orders.map(o => o.carrier || 'Not Assigned').filter(Boolean))];
-    return ['All', ...uniqueCarriers];
+    const uniqueCarriers = [
+      ...new Set(
+        orders.map((o) => o.carrier || "Not Assigned").filter(Boolean),
+      ),
+    ];
+    return ["All", ...uniqueCarriers];
   };
 
   const filterConfig = [
@@ -191,20 +215,20 @@ const PackingCompleted = ({ onOrderSelect }) => {
         </button>
       ),
     },
-    { 
-      key: "client", 
+    {
+      key: "client",
       title: "Client",
-      render: (r) => r.client || "-"
+      render: (r) => r.client || "-",
     },
-    { 
-      key: "cartons", 
+    {
+      key: "cartons",
       title: "Cartons",
-      render: (r) => r.cartons || "-"
+      render: (r) => r.cartons || "-",
     },
-    { 
-      key: "totalWeight", 
+    {
+      key: "totalWeight",
       title: "Total Weight",
-      render: (r) => r.totalWeight || "-"
+      render: (r) => r.totalWeight || "-",
     },
     {
       key: "carrier",
@@ -237,7 +261,7 @@ const PackingCompleted = ({ onOrderSelect }) => {
       title: "Actions",
       render: (r) => (
         <button
-          onClick={() => onOrderSelect?.(r.orderNo)}
+          onClick={() => onOrderSelect?.(r.id)}
           className="text-blue-600 text-sm font-medium hover:text-blue-800"
         >
           Open Shipping
@@ -247,7 +271,7 @@ const PackingCompleted = ({ onOrderSelect }) => {
   ];
 
   const handleFilterChange = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
+    setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
   const handleApplyFilters = () => {
@@ -310,12 +334,14 @@ const PackingCompleted = ({ onOrderSelect }) => {
 
       <div className="rounded-lg border border-gray-200 bg-white">
         <CusTable columns={columns} data={transformedData} />
-        
+
         {/* Pagination */}
         {pagination.pages > 1 && (
           <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200">
             <div className="text-sm text-gray-700">
-              Showing {((pagination.page - 1) * pagination.limit) + 1} to {Math.min(pagination.page * pagination.limit, pagination.total)} of {pagination.total} orders
+              Showing {(pagination.page - 1) * pagination.limit + 1} to{" "}
+              {Math.min(pagination.page * pagination.limit, pagination.total)}{" "}
+              of {pagination.total} orders
             </div>
             <div className="flex items-center gap-2">
               <button
