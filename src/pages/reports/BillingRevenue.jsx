@@ -289,18 +289,18 @@ export default function BillingRevenue() {
         return <NumPill value={formatCurrency(n)} tone="orange" />;
       },
     },
-    {
-      key: "action",
-      title: "Action",
-      render: (row) => (
-        <button 
-          onClick={() => console.log("View details for:", row.customer)}
-          className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-800 hover:bg-gray-100 transition-colors"
-        >
-          Details
-        </button>
-      ),
-    },
+    // {
+    //   key: "action",
+    //   title: "Action",
+    //   render: (row) => (
+    //     <button 
+    //       onClick={() => console.log("View details for:", row.customer)}
+    //       className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-800 hover:bg-gray-100 transition-colors"
+    //     >
+    //       Details
+    //     </button>
+    //   ),
+    // },
   ];
 
   // Loading state

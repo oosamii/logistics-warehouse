@@ -294,18 +294,18 @@ export default function PackProductivity() {
       title: "Rating",
       render: (row) => <RatingPill rating={row.rating} />,
     },
-    {
-      key: "action",
-      title: "Action",
-      render: (row) => (
-        <button 
-          onClick={() => console.log("View details for:", row.packer)}
-          className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-800 hover:bg-gray-100 transition-colors"
-        >
-          Details
-        </button>
-      ),
-    },
+    // {
+    //   key: "action",
+    //   title: "Action",
+    //   render: (row) => (
+    //     <button 
+    //       onClick={() => console.log("View details for:", row.packer)}
+    //       className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-800 hover:bg-gray-100 transition-colors"
+    //     >
+    //       Details
+    //     </button>
+    //   ),
+    // },
   ];
 
   // Loading state
