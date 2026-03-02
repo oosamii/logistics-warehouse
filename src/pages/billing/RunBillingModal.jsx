@@ -8,7 +8,7 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
   const [previewLoading, setPreviewLoading] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [showPreview, setShowPreview] = useState(false);
-  
+
   const [formData, setFormData] = useState({
     warehouse_id: "",
     start_date: "",
@@ -21,11 +21,10 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
       "PICKING",
       "PACKING",
       "SHIPPING_ADMIN",
-      "MANUAL"
+      "MANUAL",
     ],
   });
 
-  // Available charge types
   const chargeTypeOptions = [
     { value: "STORAGE", label: "Storage" },
     { value: "INBOUND_HANDLING", label: "Inbound Handling" },
@@ -38,7 +37,6 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
     { value: "MANUAL", label: "Manual" },
   ];
 
-  // Fetch warehouses on modal open
   useEffect(() => {
     if (isOpen) {
       fetchWarehouses();
@@ -75,7 +73,7 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    
+
     try {
       // Prepare data for API
       const apiData = {
@@ -87,7 +85,7 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
       };
 
       const response = await http.post("/billing/run", apiData);
-      
+
       if (response.data?.success) {
         onRunBilling(response.data.data);
         onClose();
@@ -104,7 +102,7 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
             "PICKING",
             "PACKING",
             "SHIPPING_ADMIN",
-            "MANUAL"
+            "MANUAL",
           ],
         });
         setPreviewData(null);
@@ -120,13 +118,18 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
 
   const handlePreview = async () => {
     // Validate required fields
-    if (!formData.warehouse_id || !formData.start_date || !formData.end_date || !formData.client_id) {
+    if (
+      !formData.warehouse_id ||
+      !formData.start_date ||
+      !formData.end_date ||
+      !formData.client_id
+    ) {
       alert("Please fill in all required fields");
       return;
     }
 
     setPreviewLoading(true);
-    
+
     try {
       const apiData = {
         warehouse_id: parseInt(formData.warehouse_id),
@@ -137,7 +140,7 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
       };
 
       const response = await http.post("/billing/preview", apiData);
-      
+
       if (response.data?.success) {
         setPreviewData(response.data.data);
         setShowPreview(true);
@@ -154,7 +157,7 @@ const RunBillingModal = ({ isOpen, onClose, onRunBilling }) => {
     const newTypes = formData.charge_types.includes(chargeType)
       ? formData.charge_types.filter((t) => t !== chargeType)
       : [...formData.charge_types, chargeType];
-    
+
     setFormData({ ...formData, charge_types: newTypes });
   };
 

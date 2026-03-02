@@ -9,8 +9,6 @@ export default {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
       },
-      // IMPORTANT: Tailwind doesn't support adding fontWeight tokens like this.
-      // Use classes: font-medium / font-semibold
     },
   },
   plugins: [],

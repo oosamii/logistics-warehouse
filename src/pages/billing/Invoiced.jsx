@@ -35,11 +35,9 @@ const Invoiced = ({ onOpenInvoice }) => {
     search: "",
   });
 
-  // Edit modal
   const [showEditModal, setShowEditModal] = useState(false);
   const [activeInvoice, setActiveInvoice] = useState(null);
 
-  // Confirm modal (send/void)
   const [confirm, setConfirm] = useState({
     open: false,
     type: null, // "send" | "void"
@@ -75,7 +73,6 @@ const Invoiced = ({ onOpenInvoice }) => {
     return { date_from: "", date_to: "" };
   };
 
-  // Warehouses for dropdown
   useEffect(() => {
     const loadWarehouses = async () => {
       try {
@@ -98,7 +95,6 @@ const Invoiced = ({ onOpenInvoice }) => {
     qs.set("page", String(page));
     qs.set("limit", String(filters.limit));
 
-    // period → date range
     const range =
       filters.period === "Custom Range"
         ? { date_from: filters.date_from, date_to: filters.date_to }
@@ -113,7 +109,6 @@ const Invoiced = ({ onOpenInvoice }) => {
     if (range.date_from) qs.set("date_from", range.date_from);
     if (range.date_to) qs.set("date_to", range.date_to);
 
-    // if backend supports search
     if (filters.search?.trim()) qs.set("search", filters.search.trim());
 
     return qs.toString();
@@ -170,7 +165,6 @@ const Invoiced = ({ onOpenInvoice }) => {
     loadInvoices(1);
   };
 
-  // Confirm modal helpers
   const openConfirm = (type, invoice) => {
     setConfirm({
       open: true,
@@ -205,7 +199,6 @@ const Invoiced = ({ onOpenInvoice }) => {
     }
   };
 
-  // FilterBar config (keep simple)
   const filterConfig = [
     {
       key: "period",

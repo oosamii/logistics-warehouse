@@ -67,7 +67,7 @@ const BillableEvents = () => {
       const e = new Date(now.getFullYear(), q * 3 + 3, 0);
       return { date_from: toYMD(s), date_to: toYMD(e) };
     }
-    return { date_from: "", date_to: "" }; // Custom Range handled by UI
+    return { date_from: "", date_to: "" };
   };
 
   useEffect(() => {
@@ -223,14 +223,6 @@ const BillableEvents = () => {
     {
       key: "reference",
       title: "Reference",
-      // render: (row) => (
-      //   <button
-      //     onClick={() => navigate(`/billing/billableEventDetail/${row.id}`)}
-      //     className="font-semibold text-blue-600 hover:text-blue-700"
-      //   >
-      //     {row.reference}
-      //   </button>
-      // ),
     },
     { key: "customer", title: "Customer" },
     { key: "basis", title: "Basis" },

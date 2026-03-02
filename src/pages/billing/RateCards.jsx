@@ -102,7 +102,6 @@ const RateCards = () => {
           response.data.message || "Rate card deleted successfully",
         );
 
-        // Update the card's status in UI to inactive
         setRateCards((prev) =>
           prev.map((card) =>
             card.id === rateCardToDelete.id
@@ -119,7 +118,6 @@ const RateCards = () => {
 
       if (error.response?.data?.message?.includes("already inactive")) {
         toast.info("This rate card is already inactive");
-        // Update the card's status in UI
         setRateCards((prev) =>
           prev.map((card) =>
             card.id === rateCardToDelete.id

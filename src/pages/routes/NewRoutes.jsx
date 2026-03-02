@@ -105,7 +105,10 @@ const NewRoutes = [
   { path: "/masters", element: protect("/masters", <Masters />) },
 
   { path: "/reports", element: protect("/reports", <Reports />) },
-  { path: "/inboundTAT", element: protect("/inboundTAT", <InboundTAT />) },
+  {
+    path: "/reports/inboundTAT",
+    element: protect("/reports/inboundTAT", <InboundTAT />),
+  },
   {
     path: "/putawayAging",
     element: protect("/putawayAging", <PutawayAging />),

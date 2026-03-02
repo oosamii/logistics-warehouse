@@ -128,7 +128,7 @@ export default function Reports() {
             rightValue="4.2h"
             rightSub="↑ 0.5h"
             rightSubTone="danger"
-            route="/inboundTAT"
+            route="/reports/inboundTAT"
           />
 
           <ReportCard
@@ -142,7 +142,7 @@ export default function Reports() {
             route="/putawayAging"
           />
 
-          <ReportCard
+          {/* <ReportCard
             title="Inventory Accuracy"
             Icon={Target}
             leftLabel="Cycle Counts"
@@ -152,7 +152,7 @@ export default function Reports() {
             rightSub="↓ 0.02%"
             rightSubTone="success"
             route="/inventoryAccuracy"
-          />
+          /> */}
 
           <ReportCard
             title="Space Utilization"

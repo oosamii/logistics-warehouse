@@ -46,13 +46,10 @@ const ReadyToInvoice = () => {
     search: "",
   });
 
-  // accordion open keys
   const [openKeys, setOpenKeys] = useState(new Set());
 
-  // ✅ selection per group (client+warehouse)
   const [selectedByGroup, setSelectedByGroup] = useState({});
 
-  // modal
   const [showInvoiceModal, setShowInvoiceModal] = useState(false);
   const [selectedEventIds, setSelectedEventIds] = useState([]);
   const [activeClient, setActiveClient] = useState(null);
@@ -122,7 +119,6 @@ const ReadyToInvoice = () => {
 
   useEffect(() => {
     loadReadyGroups();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const handleFilterChange = (key, value) => {
