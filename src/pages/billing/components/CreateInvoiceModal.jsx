@@ -131,7 +131,7 @@ const CreateInvoiceModal = ({
               value={selectedClientId}
               onChange={(id) => setSelectedClientId(id)}
               placeholder="Select Client"
-              enableSearch
+              // enableSearch
               limit={10}
               searchParam="search"
               renderItem={(c) => ({

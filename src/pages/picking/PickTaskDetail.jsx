@@ -439,7 +439,7 @@ const PickTaskDetail = () => {
                   value={selectedUser}
                   onChange={(val) => setSelectedUser(val)}
                   placeholder="Assign to user"
-                  enableSearch
+                  // enableSearch
                   searchParam="search"
                   renderItem={(u) => ({
                     title: u.first_name + u.last_name || u.username,

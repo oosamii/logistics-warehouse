@@ -536,7 +536,7 @@ export default function InboundTAT() {
   );
 
   return (
-    <div>
+    <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto">
       <PageHeader
         title="Inbound Turnaround Time"
         subtitle="Monitor inbound receiving and putaway efficiency"
@@ -618,7 +618,7 @@ export default function InboundTAT() {
         )}
       </div>
 
-      <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-4">
+      <div className="mt-3 grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
           title="ASNs Received"
           value={String(summary.total_asns_received ?? 0)}

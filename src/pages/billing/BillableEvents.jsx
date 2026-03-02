@@ -421,7 +421,7 @@ const BillableEvents = () => {
               onChange={(id) => handleFilterChange("client_id", id)}
               placeholder="All Clients"
               limit={10}
-              enableSearch
+              // enableSearch
               searchParam="search"
               renderItem={(c) => ({
                 title: `${c.client_name} (${c.client_code})`,

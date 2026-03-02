@@ -540,7 +540,7 @@ export default function PutawayAging() {
   );
 
   return (
-    <div className="">
+    <div className="max-w-7xl 2xl:max-w-[1800px] mx-auto">
       <PageHeader
         title="Putaway Aging Report"
         subtitle="Monitor delays in stock movement from dock to storage"
@@ -600,7 +600,7 @@ export default function PutawayAging() {
               onChange={(id) => handleFilterChange("user_id", id)}
               placeholder="All Users"
               limit={10}
-              enableSearch
+              // enableSearch
               searchParam="search"
               renderItem={(u) => ({
                 title:

@@ -394,7 +394,6 @@ export default function SpaceUtilization() {
     fetchReport(controller.signal);
   };
 
-  // ✅ local filter (status + search only)
   const filtered = useMemo(() => {
     const q = (search || "").toLowerCase().trim();
 
@@ -425,7 +424,6 @@ export default function SpaceUtilization() {
     return out;
   }, [rows, search, utilStatus]);
 
-  // ✅ FilterBar config for the top row (zone + location type)
   const filterConfig = useMemo(
     () => [
       {
@@ -455,7 +453,6 @@ export default function SpaceUtilization() {
     [filters.zone, filters.location_type],
   );
 
-  // ✅ handle FilterBar values (convert ALL -> "")
   const handleTopFilterChange = (key, val) => {
     if (val === "ALL") handleFilterChange(key, "");
     else handleFilterChange(key, val);
@@ -501,44 +498,42 @@ export default function SpaceUtilization() {
   );
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="mx-auto w-full max-w-7xl px-4 py-5">
-        <PageHeader
-          title="Space Utilization Report"
-          subtitle="Monitor bin capacity, utilization rates, and warehouse efficiency"
-          breadcrumbs={[
-            { label: "Reports", to: "/reports" },
-            { label: "Space Utilization" },
-          ]}
-          actions={
-            <>
-              <button
-                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
-                onClick={handleApply}
-              >
-                <RefreshCw className="h-4 w-4" />
-                Refresh
-              </button>
-              <button
-                className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
-                onClick={() => console.log("export csv")}
-              >
-                <Download className="h-4 w-4" />
-                Export CSV
-              </button>
-            </>
-          }
-        />
+    <div className="mx-auto w-full max-w-7xl 2xl:max-w-[1800px]">
+      <PageHeader
+        title="Space Utilization Report"
+        subtitle="Monitor bin capacity, utilization rates, and warehouse efficiency"
+        breadcrumbs={[
+          { label: "Reports", to: "/reports" },
+          { label: "Space Utilization" },
+        ]}
+        actions={
+          <>
+            <button
+              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+              onClick={handleApply}
+            >
+              <RefreshCw className="h-4 w-4" />
+              Refresh
+            </button>
+            <button
+              className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm"
+              onClick={() => console.log("export csv")}
+            >
+              <Download className="h-4 w-4" />
+              Export CSV
+            </button>
+          </>
+        }
+      />
 
-        {/* Filters */}
-        <div className="mt-3">
+      {/* Filters */}
+      {/* <div className="mt-3">
           <FilterBar
             filters={filterConfig}
             onFilterChange={handleTopFilterChange}
             onApply={handleApply}
             onReset={handleReset}
           >
-            {/* ✅ local status filter */}
             <div className="w-full sm:w-[220px]">
               <p className="mb-1 text-xs text-gray-500">Status</p>
               <select
@@ -548,109 +543,106 @@ export default function SpaceUtilization() {
                   focus:outline-none focus:ring-2 focus:ring-blue-100"
               >
                 <option value="">All Status</option>
-                {/* <option value="Overfilled">Overfilled</option>
-                <option value="Full">Full</option> */}
                 <option value="High">High</option>
                 <option value="Active">Active</option>
                 <option value="Empty">Empty</option>
               </select>
             </div>
           </FilterBar>
-        </div>
+        </div> */}
 
-        {/* Loading/Error */}
-        <div className="mt-2">
-          {loading && (
-            <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600">
-              Loading report...
-            </div>
-          )}
-          {!!err && (
-            <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              {err}
-            </div>
-          )}
-        </div>
+      {/* Loading/Error */}
+      <div className="mt-2">
+        {loading && (
+          <div className="rounded-md border border-gray-200 bg-white px-3 py-2 text-sm text-gray-600">
+            Loading report...
+          </div>
+        )}
+        {!!err && (
+          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            {err}
+          </div>
+        )}
+      </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 mt-3">
-          <StatCard
-            title="Total Bins"
-            value={String(summary.total_bins ?? 0)}
-            accentColor="#2563EB"
-            subtext="Selected filters"
+      {/* Stats */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 lg:grid-cols-4 mt-3">
+        <StatCard
+          title="Total Bins"
+          value={String(summary.total_bins ?? 0)}
+          accentColor="#2563EB"
+          subtext="Selected filters"
+        />
+
+        <div className="bg-white border rounded-lg p-4 relative overflow-hidden">
+          <div
+            className="absolute left-0 top-0 h-full w-1"
+            style={{ backgroundColor: "#F59E0B" }}
           />
-
-          <div className="bg-white border rounded-lg p-4 relative overflow-hidden">
-            <div
-              className="absolute left-0 top-0 h-full w-1"
-              style={{ backgroundColor: "#F59E0B" }}
-            />
-            <p className="text-sm text-gray-500">Avg Utilization</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-2">
-              {`${toNum(summary.avg_utilization_pct).toFixed(2)}%`}
-            </p>
-            <div className="mt-2">
-              <Badge text="Warehouse load" tone="orange" />
-            </div>
-          </div>
-
-          <div className="bg-white border rounded-lg p-4 relative overflow-hidden">
-            <div
-              className="absolute left-0 top-0 h-full w-1"
-              style={{ backgroundColor: "#EF4444" }}
-            />
-            <p className="text-sm text-gray-500">Overfilled Bins</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-2">
-              {String(summary.overfilled_bins ?? "0")}
-            </p>
-            <div className="mt-2">
-              <Badge text="Corrective action needed" tone="red" />
-            </div>
-          </div>
-
-          <div className="bg-white border rounded-lg p-4 relative overflow-hidden">
-            <div
-              className="absolute left-0 top-0 h-full w-1"
-              style={{ backgroundColor: "#16A34A" }}
-            />
-            <p className="text-sm text-gray-500">Empty Bins</p>
-            <p className="text-2xl font-semibold text-gray-900 mt-2">
-              {String(summary.empty_bins ?? "0")}
-            </p>
-            <div className="mt-2">
-              <Badge text="Available space" tone="green" />
-            </div>
+          <p className="text-sm text-gray-500">Avg Utilization</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-2">
+            {`${toNum(summary.avg_utilization_pct).toFixed(2)}%`}
+          </p>
+          <div className="mt-2">
+            <Badge text="Warehouse load" tone="orange" />
           </div>
         </div>
 
-        {/* Detailed Bin List */}
-        <div className="mt-6 rounded-xl border border-gray-200 bg-white">
-          <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <h3 className="text-sm font-semibold text-gray-900">
-              Detailed Bin List
-            </h3>
+        <div className="bg-white border rounded-lg p-4 relative overflow-hidden">
+          <div
+            className="absolute left-0 top-0 h-full w-1"
+            style={{ backgroundColor: "#EF4444" }}
+          />
+          <p className="text-sm text-gray-500">Overfilled Bins</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-2">
+            {String(summary.overfilled_bins ?? "0")}
+          </p>
+          <div className="mt-2">
+            <Badge text="Corrective action needed" tone="red" />
+          </div>
+        </div>
 
-            <div className="relative w-full sm:w-[260px]">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-9 w-full rounded-md border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
-                placeholder="Search bin, SKU..."
-              />
+        <div className="bg-white border rounded-lg p-4 relative overflow-hidden">
+          <div
+            className="absolute left-0 top-0 h-full w-1"
+            style={{ backgroundColor: "#16A34A" }}
+          />
+          <p className="text-sm text-gray-500">Empty Bins</p>
+          <p className="text-2xl font-semibold text-gray-900 mt-2">
+            {String(summary.empty_bins ?? "0")}
+          </p>
+          <div className="mt-2">
+            <Badge text="Available space" tone="green" />
+          </div>
+        </div>
+      </div>
+
+      {/* Detailed Bin List */}
+      <div className="mt-6 rounded-xl border border-gray-200 bg-white">
+        <div className="flex flex-col gap-3 border-b border-gray-200 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
+          <h3 className="text-sm font-semibold text-gray-900">
+            Detailed Bin List
+          </h3>
+
+          <div className="relative w-full sm:w-[260px]">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-9 w-full rounded-md border border-gray-200 bg-white pl-9 pr-3 text-sm text-gray-700 placeholder:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-100"
+              placeholder="Search bin, SKU..."
+            />
+          </div>
+        </div>
+
+        <div className="p-2">
+          {!loading && !err && filtered.length === 0 ? (
+            <div className="p-6 text-sm text-gray-600">
+              No data for selected filters.
             </div>
-          </div>
-
-          <div className="p-2">
-            {!loading && !err && filtered.length === 0 ? (
-              <div className="p-6 text-sm text-gray-600">
-                No data for selected filters.
-              </div>
-            ) : (
-              <CusTable columns={columns} data={filtered} />
-            )}
-          </div>
+          ) : (
+            <CusTable columns={columns} data={filtered} />
+          )}
         </div>
       </div>
     </div>

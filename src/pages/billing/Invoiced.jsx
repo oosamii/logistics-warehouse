@@ -367,7 +367,7 @@ const Invoiced = ({ onOpenInvoice }) => {
               value={filters.client_id}
               onChange={(id) => handleFilterChange("client_id", id)}
               placeholder="All Clients"
-              enableSearch
+              // enableSearch
               limit={10}
               searchParam="search"
               renderItem={(c) => ({

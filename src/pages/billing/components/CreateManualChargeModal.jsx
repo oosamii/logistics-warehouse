@@ -208,7 +208,7 @@ const CreateManualChargeModal = ({ isOpen, onClose, onSuccess }) => {
                 onChange={(id, obj) => update("client_id", id)}
                 placeholder="Select Client"
                 limit={10}
-                enableSearch={true}
+                // enableSearch={true}
                 searchParam="search"
                 searchPlaceholder="Search client…"
                 renderItem={(c) => ({

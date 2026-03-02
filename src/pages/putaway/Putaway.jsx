@@ -714,7 +714,7 @@ const Putaway = () => {
             listKey="clients"
             value={filterValues.client}
             onChange={(id) => handleFilterChange("client", id)}
-            enableSearch
+            // enableSearch
             renderItem={(c) => ({
               title: c.client_name,
               subtitle: c.client_code,
