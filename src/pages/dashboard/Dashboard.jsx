@@ -412,7 +412,7 @@ const Dashboard = () => {
       )}
 
       <DashboardQueue warehouseId={selectedWarehouse} />
-      <DashboardWidgets />
+      {/* <DashboardWidgets /> */}
     </div>
   );
 };
