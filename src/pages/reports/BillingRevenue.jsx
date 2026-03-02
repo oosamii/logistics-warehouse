@@ -59,9 +59,9 @@ export default function BillingRevenue() {
   const [clients, setClients] = useState([]);
   const [clientPagination, setClientPagination] = useState({ page: 1, pages: 1, total: 0 });
   
-  // Filter states
+  // Filter states - default to "all"
   const [dateRange, setDateRange] = useState("All");
-  const [client, setClient] = useState("");
+  const [client, setClient] = useState("all");
   const [chargeType, setChargeType] = useState("All Charge Types");
   const [search, setSearch] = useState("");
 
@@ -74,14 +74,11 @@ export default function BillingRevenue() {
       if (response.data.success) {
         setClients(response.data.data.clients);
         setClientPagination(response.data.data.pagination || { page: 1, pages: 1, total: response.data.data.clients.length });
-        if (response.data.data.clients.length > 0 && !client) {
-          setClient(response.data.data.clients[0].id.toString());
-        }
       }
     } catch (error) {
       console.error("Error fetching clients:", error);
     }
-  }, [client]);
+  }, []);
 
   // Load clients on mount
   useEffect(() => {
@@ -125,16 +122,17 @@ export default function BillingRevenue() {
 
   // Fetch billing revenue report data
   const fetchReportData = useCallback(async () => {
-    if (!client) return;
-
     setLoading(true);
     try {
       const { from, to } = getDateRange();
       
       // Build params object
-      const params = {
-        client_id: client,
-      };
+      const params = {};
+      
+      // Add client_id only if not "all"
+      if (client !== "all") {
+        params.client_id = client;
+      }
       
       // Only add date params if they exist
       if (from && to) {
@@ -166,19 +164,15 @@ export default function BillingRevenue() {
 
   const handleReset = () => {
     setDateRange("All");
-    if (clients.length > 0) {
-      setClient(clients[0].id.toString());
-    }
+    setClient("all");
     setChargeType("All Charge Types");
     setSearch("");
   };
 
   // Auto-fetch when client changes
   useEffect(() => {
-    if (client) {
-      fetchReportData();
-    }
-  }, [client, fetchReportData]);
+    fetchReportData();
+  }, [client, dateRange, fetchReportData]);
 
   // Transform API data for table
   const tableRows = useMemo(() => {
@@ -362,10 +356,13 @@ export default function BillingRevenue() {
                 key: "client",
                 label: "Client",
                 value: client,
-                options: clients.map(c => ({
-                  label: c.client_name,
-                  value: c.id.toString()
-                })),
+                options: [
+                  { label: "All Clients", value: "all" },
+                  ...clients.map(c => ({
+                    label: c.client_name,
+                    value: c.id.toString()
+                  }))
+                ],
                 pagination: clientPagination,
                 onPageChange: (page) => {
                   setClientPage(page);

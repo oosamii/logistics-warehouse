@@ -27,43 +27,51 @@ export default function PickProductivity() {
   
   // Filter states - default to "All" for date range
   const [dateRange, setDateRange] = useState("All");
-  const [warehouse, setWarehouse] = useState("");
-  const [client, setClient] = useState("");
+  const [warehouse, setWarehouse] = useState("all");
+  const [client, setClient] = useState("all");
   const [user, setUser] = useState("All Users");
 
-  // Fetch warehouses on mount
-  useEffect(() => {
-    fetchWarehouses();
-    fetchClients();
-  }, []);
+  // Pagination states for dropdowns
+  const [warehousePage, setWarehousePage] = useState(1);
+  const [clientPage, setClientPage] = useState(1);
+  const [warehousePagination, setWarehousePagination] = useState({ page: 1, pages: 1, total: 0 });
+  const [clientPagination, setClientPagination] = useState({ page: 1, pages: 1, total: 0 });
 
-  const fetchWarehouses = async () => {
+  // Fetch warehouses with pagination
+  const fetchWarehouses = useCallback(async (page = 1) => {
     try {
-      const response = await http.get("/warehouses");
+      const response = await http.get("/warehouses", {
+        params: { page, limit: 10 }
+      });
       if (response.data.success) {
         setWarehouses(response.data.data);
-        if (response.data.data.length > 0) {
-          setWarehouse(response.data.data[0].id.toString());
-        }
+        setWarehousePagination(response.data.pagination || { page: 1, pages: 1, total: response.data.data.length });
       }
     } catch (error) {
       console.error("Error fetching warehouses:", error);
     }
-  };
+  }, []);
 
-  const fetchClients = async () => {
+  // Fetch clients with pagination
+  const fetchClients = useCallback(async (page = 1) => {
     try {
-      const response = await http.get("/clients");
+      const response = await http.get("/clients", {
+        params: { page, limit: 10 }
+      });
       if (response.data.success) {
         setClients(response.data.data.clients);
-        if (response.data.data.clients.length > 0) {
-          setClient(response.data.data.clients[0].id.toString());
-        }
+        setClientPagination(response.data.data.pagination || { page: 1, pages: 1, total: response.data.data.clients.length });
       }
     } catch (error) {
       console.error("Error fetching clients:", error);
     }
-  };
+  }, []);
+
+  // Fetch warehouses and clients on mount
+  useEffect(() => {
+    fetchWarehouses(1);
+    fetchClients(1);
+  }, [fetchWarehouses, fetchClients]);
 
   // Calculate date range based on selection
   const getDateRange = useCallback(() => {
@@ -72,8 +80,6 @@ export default function PickProductivity() {
 
     switch (dateRange) {
       case "All":
-        // Return null dates to indicate no date filtering
-        // The API might handle this differently - you may need to adjust
         from = null;
         to = null;
         break;
@@ -104,25 +110,28 @@ export default function PickProductivity() {
 
   // Fetch report data
   const fetchReportData = useCallback(async () => {
-    if (!warehouse || !client) return;
-
     setLoading(true);
     try {
       const { from, to } = getDateRange();
       
       // Build params object
-      const params = {
-        warehouse_id: warehouse,
-        client_id: client,
-      };
+      const params = {};
+      
+      // Add warehouse_id only if not "all"
+      if (warehouse !== "all") {
+        params.warehouse_id = warehouse;
+      }
+      
+      // Add client_id only if not "all"
+      if (client !== "all") {
+        params.client_id = client;
+      }
       
       // Only add date params if they exist (for "All" option)
       if (from && to) {
         params.date_from = from;
         params.date_to = to;
       }
-      
-    
       
       console.log("Fetching with params:", params); // For debugging
       
@@ -146,22 +155,16 @@ export default function PickProductivity() {
   };
 
   const handleReset = () => {
-    setDateRange("All"); // Reset to "All" instead of "This Month"
-    if (warehouses.length > 0) {
-      setWarehouse(warehouses[0].id.toString());
-    }
-    if (clients.length > 0) {
-      setClient(clients[0].id.toString());
-    }
+    setDateRange("All");
+    setWarehouse("all");
+    setClient("all");
     setUser("All Users");
   };
 
-  // Auto-fetch when warehouse or client changes (optional)
+  // Auto-fetch on mount and when filters change
   useEffect(() => {
-    if (warehouse && client) {
-      fetchReportData();
-    }
-  }, [warehouse, client, fetchReportData]);
+    fetchReportData();
+  }, [warehouse, client, dateRange, fetchReportData]);
 
   // Format seconds to readable time
   const formatTime = (seconds) => {
@@ -314,19 +317,35 @@ export default function PickProductivity() {
                 key: "warehouse",
                 label: "Warehouse",
                 value: warehouse,
-                options: warehouses.map(w => ({
-                  label: w.warehouse_name,
-                  value: w.id.toString()
-                })),
+                options: [
+                  { label: "All Warehouses", value: "all" },
+                  ...warehouses.map(w => ({
+                    label: w.warehouse_name,
+                    value: w.id.toString()
+                  }))
+                ],
+                pagination: warehousePagination,
+                onPageChange: (page) => {
+                  setWarehousePage(page);
+                  fetchWarehouses(page);
+                },
               },
               {
                 key: "client",
                 label: "Client",
                 value: client,
-                options: clients.map(c => ({
-                  label: c.client_name,
-                  value: c.id.toString()
-                })),
+                options: [
+                  { label: "All Clients", value: "all" },
+                  ...clients.map(c => ({
+                    label: c.client_name,
+                    value: c.id.toString()
+                  }))
+                ],
+                pagination: clientPagination,
+                onPageChange: (page) => {
+                  setClientPage(page);
+                  fetchClients(page);
+                },
               },
               {
                 key: "user",

@@ -83,10 +83,10 @@ export default function OutboundSLA() {
   const [warehousePagination, setWarehousePagination] = useState({ page: 1, pages: 1, total: 0 });
   const [clientPagination, setClientPagination] = useState({ page: 1, pages: 1, total: 0 });
   
-  // Filter states
+  // Filter states - default to "all"
   const [dateRange, setDateRange] = useState("All");
-  const [warehouse, setWarehouse] = useState("");
-  const [client, setClient] = useState("");
+  const [warehouse, setWarehouse] = useState("all");
+  const [client, setClient] = useState("all");
   const [showBreachesOnly, setShowBreachesOnly] = useState(false);
 
   // Fetch warehouses with pagination
@@ -98,14 +98,11 @@ export default function OutboundSLA() {
       if (response.data.success) {
         setWarehouses(response.data.data);
         setWarehousePagination(response.data.pagination || { page: 1, pages: 1, total: response.data.data.length });
-        if (response.data.data.length > 0 && !warehouse) {
-          setWarehouse(response.data.data[0].id.toString());
-        }
       }
     } catch (error) {
       console.error("Error fetching warehouses:", error);
     }
-  }, [warehouse]);
+  }, []);
 
   // Fetch clients with pagination
   const fetchClients = useCallback(async (page = 1) => {
@@ -116,14 +113,11 @@ export default function OutboundSLA() {
       if (response.data.success) {
         setClients(response.data.data.clients);
         setClientPagination(response.data.data.pagination || { page: 1, pages: 1, total: response.data.data.clients.length });
-        if (response.data.data.clients.length > 0 && !client) {
-          setClient(response.data.data.clients[0].id.toString());
-        }
       }
     } catch (error) {
       console.error("Error fetching clients:", error);
     }
-  }, [client]);
+  }, []);
 
   // Load initial data
   useEffect(() => {
@@ -168,17 +162,22 @@ export default function OutboundSLA() {
 
   // Fetch outbound SLA report data
   const fetchReportData = useCallback(async () => {
-    if (!warehouse || !client) return;
-
     setLoading(true);
     try {
       const { from, to } = getDateRange();
       
       // Build params object
-      const params = {
-        warehouse_id: warehouse,
-        client_id: client,
-      };
+      const params = {};
+      
+      // Add warehouse_id only if not "all"
+      if (warehouse !== "all") {
+        params.warehouse_id = warehouse;
+      }
+      
+      // Add client_id only if not "all"
+      if (client !== "all") {
+        params.client_id = client;
+      }
       
       // Only add date params if they exist
       if (from && to) {
@@ -209,21 +208,15 @@ export default function OutboundSLA() {
 
   const handleReset = () => {
     setDateRange("All");
-    if (warehouses.length > 0) {
-      setWarehouse(warehouses[0].id.toString());
-    }
-    if (clients.length > 0) {
-      setClient(clients[0].id.toString());
-    }
+    setWarehouse("all");
+    setClient("all");
     setShowBreachesOnly(false);
   };
 
-  // Auto-fetch when warehouse or client changes
+  // Auto-fetch when filters change
   useEffect(() => {
-    if (warehouse && client) {
-      fetchReportData();
-    }
-  }, [warehouse, client, fetchReportData]);
+    fetchReportData();
+  }, [warehouse, client, dateRange, fetchReportData]);
 
   // Transform API data for table
   const tableRows = useMemo(() => {
@@ -300,6 +293,19 @@ export default function OutboundSLA() {
     },
   ];
 
+  // Get filter display labels
+  const getWarehouseLabel = useCallback(() => {
+    if (warehouse === "all") return "All Warehouses";
+    const selected = warehouses.find(w => w.id.toString() === warehouse);
+    return selected?.warehouse_name || "Select Warehouse";
+  }, [warehouse, warehouses]);
+
+  const getClientLabel = useCallback(() => {
+    if (client === "all") return "All Clients";
+    const selected = clients.find(c => c.id.toString() === client);
+    return selected?.client_name || "Select Client";
+  }, [client, clients]);
+
   // Loading state
   if (loading && !reportData) {
     return (
@@ -353,10 +359,13 @@ export default function OutboundSLA() {
                 key: "warehouse",
                 label: "Warehouse",
                 value: warehouse,
-                options: warehouses.map(w => ({
-                  label: w.warehouse_name,
-                  value: w.id.toString()
-                })),
+                options: [
+                  { label: "All Warehouses", value: "all" },
+                  ...warehouses.map(w => ({
+                    label: w.warehouse_name,
+                    value: w.id.toString()
+                  }))
+                ],
                 pagination: warehousePagination,
                 onPageChange: (page) => {
                   setWarehousePage(page);
@@ -367,10 +376,13 @@ export default function OutboundSLA() {
                 key: "client",
                 label: "Client",
                 value: client,
-                options: clients.map(c => ({
-                  label: c.client_name,
-                  value: c.id.toString()
-                })),
+                options: [
+                  { label: "All Clients", value: "all" },
+                  ...clients.map(c => ({
+                    label: c.client_name,
+                    value: c.id.toString()
+                  }))
+                ],
                 pagination: clientPagination,
                 onPageChange: (page) => {
                   setClientPage(page);
