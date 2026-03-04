@@ -1,6 +1,6 @@
 // SkuDetailPage.jsx
 import React, { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
 import http from "../../../api/http";
 import { useToast } from "../../components/toast/ToastProvider";
 import StatusPill from "./StatusPill";
@@ -10,6 +10,13 @@ import MoveStockModal from "./modals/MoveStockModal";
 import AdjustStockModal from "./modals/AdjustStockModal";
 
 export default function SkuDetailPage() {
+  const location = useLocation();
+
+  const queryParams = new URLSearchParams(location.search);
+  const pageType = queryParams.get("page");
+
+  const isPutawayView = pageType === "putaway";
+
   const { skuId } = useParams();
   const navigate = useNavigate();
   const toast = useToast();
@@ -280,22 +287,18 @@ export default function SkuDetailPage() {
             {/* Back Button - Top right on mobile, right on desktop */}
             <div className="order-1 sm:order-2 self-end sm:self-auto">
               <button
-                onClick={handleBack}
+                onClick={() => navigate(-1)}
                 className="flex items-center gap-2 text-gray-600 hover:text-gray-900 whitespace-nowrap"
               >
                 <ArrowLeft size={20} />
-                <span className="hidden sm:inline">Back to Inventory</span>
-                <span className="sm:hidden text-sm">Back</span>
+                <span>Go Back</span>
               </button>
             </div>
           </div>
         </div>
       </div>
-      {/* Main Content */}
       <div className="container mx-auto px-4 py-6 space-y-6">
-        {/* SKU Information Section */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Basic Info */}
           <div className="bg-white rounded-xl shadow-sm border p-6">
             <h2 className="text-lg font-semibold text-gray-900 mb-4">
               Basic Information
@@ -469,79 +472,80 @@ export default function SkuDetailPage() {
             </div>
           </div>
         </div>
+        {!isPutawayView && summary && (
+          <>
+            <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="text-sm text-gray-500">Total On Hand</div>
+                <div className="text-2xl font-bold mt-1">
+                  {summary.total_on_hand.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="text-sm text-gray-500">Available</div>
+                <div className="text-2xl font-bold mt-1 text-green-600">
+                  {summary.total_available.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="text-sm text-gray-500">On Hold</div>
+                <div className="text-2xl font-bold mt-1 text-orange-600">
+                  {summary.total_hold.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="text-sm text-gray-500">Allocated</div>
+                <div className="text-2xl font-bold mt-1 text-blue-600">
+                  {summary.total_allocated.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="text-sm text-gray-500">Damaged</div>
+                <div className="text-2xl font-bold mt-1 text-red-600">
+                  {summary.total_damaged.toLocaleString()}
+                </div>
+              </div>
+              <div className="bg-white border rounded-lg p-4 shadow-sm">
+                <div className="text-sm text-gray-500">Locations</div>
+                <div className="text-2xl font-bold mt-1">
+                  {summary.locations}
+                </div>
+              </div>
+            </div>
 
-        {/* Inventory Summary */}
-        {summary && (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-            <div className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-sm text-gray-500">Total On Hand</div>
-              <div className="text-2xl font-bold mt-1">
-                {summary.total_on_hand.toLocaleString()}
+            <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
+              <div className="p-6 border-b">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h2 className="text-xl font-semibold text-gray-900">
+                      Inventory Locations
+                    </h2>
+                    <p className="text-gray-600 mt-1">
+                      Showing {tableData.length} location
+                      {tableData.length !== 1 ? "s" : ""} for this SKU
+                    </p>
+                  </div>
+                </div>
               </div>
+
+              {tableData.length === 0 ? (
+                <div className="p-12 text-center">
+                  <div className="text-gray-400 mb-2">
+                    No inventory found for this SKU
+                  </div>
+                  <button
+                    onClick={fetchAllData}
+                    className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
+                  >
+                    Refresh Data
+                  </button>
+                </div>
+              ) : (
+                <CusTable columns={inventoryColumns} data={tableData} />
+              )}
             </div>
-            <div className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-sm text-gray-500">Available</div>
-              <div className="text-2xl font-bold mt-1 text-green-600">
-                {summary.total_available.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-sm text-gray-500">On Hold</div>
-              <div className="text-2xl font-bold mt-1 text-orange-600">
-                {summary.total_hold.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-sm text-gray-500">Allocated</div>
-              <div className="text-2xl font-bold mt-1 text-blue-600">
-                {summary.total_allocated.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-sm text-gray-500">Damaged</div>
-              <div className="text-2xl font-bold mt-1 text-red-600">
-                {summary.total_damaged.toLocaleString()}
-              </div>
-            </div>
-            <div className="bg-white border rounded-lg p-4 shadow-sm">
-              <div className="text-sm text-gray-500">Locations</div>
-              <div className="text-2xl font-bold mt-1">{summary.locations}</div>
-            </div>
-          </div>
+          </>
         )}
-
-        {/* Inventory Locations Table */}
-        <div className="bg-white rounded-xl shadow-sm border overflow-hidden">
-          <div className="p-6 border-b">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-xl font-semibold text-gray-900">
-                  Inventory Locations
-                </h2>
-                <p className="text-gray-600 mt-1">
-                  Showing {tableData.length} location
-                  {tableData.length !== 1 ? "s" : ""} for this SKU
-                </p>
-              </div>
-            </div>
-          </div>
-
-          {tableData.length === 0 ? (
-            <div className="p-12 text-center">
-              <div className="text-gray-400 mb-2">
-                No inventory found for this SKU
-              </div>
-              <button
-                onClick={fetchAllData}
-                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
-              >
-                Refresh Data
-              </button>
-            </div>
-          ) : (
-            <CusTable columns={inventoryColumns} data={tableData} />
-          )}
-        </div>
 
         {/* Last Updated Info */}
         <div className="text-xs text-gray-400 text-center pt-4">

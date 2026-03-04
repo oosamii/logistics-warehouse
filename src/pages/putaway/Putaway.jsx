@@ -508,27 +508,34 @@ const Putaway = () => {
       key: "grn",
       title: "GRN No",
       render: (row) => (
-        <div className="text-sm font-semibold">
-          {row.grn?.grn_no || `GRN-${String(row.grn_id).padStart(5, "0")}`}
+        <div className="leading-tight">
+          <div className="text-xs text-gray-400">GRN</div>
+          <div
+            className="text-sm font-semibold text-blue-600 cursor-pointer hover:underline"
+            onClick={() =>
+              navigate(`/grnDetails/${row.grn_id}`, {
+                state: { grnId: row.grn_id },
+              })
+            }
+          >
+            {row.grn?.grn_no || `GRN-${String(row.grn_id).padStart(5, "0")}`}
+          </div>
         </div>
       ),
     },
     {
       key: "sku",
       title: "SKU Details",
+      // here also /inventory/sku/${row.sku_id}
       render: (row) => (
-        <div className="leading-tight">
-          <div className="text-sm font-medium text-gray-900">
+        <div
+          onClick={() => navigate(`/inventory/sku/${row.sku_id}?page=putaway`)}
+          className="leading-tight text-sm text-blue-600 cursor-pointer hover:underline"
+        >
+          <div className="text-sm font-medium">
             {row.sku?.sku_name || "N/A"}
           </div>
-          <div className="text-xs text-gray-400">
-            {row.sku?.sku_code || "N/A"}
-          </div>
-          {row.batch_no && (
-            <div className="text-xs text-gray-500 mt-1">
-              Batch: {row.batch_no}
-            </div>
-          )}
+          <div className="text-xs ">{row.sku?.sku_code || "N/A"}</div>
         </div>
       ),
     },
@@ -695,7 +702,7 @@ const Putaway = () => {
               >
                 Assign Tasks
               </button>
-              <p className="text-gray-500 text-xs px-2">Note:Select GRN</p>
+              <p className="text-gray-500 text-xs px-2">Note:Select rows</p>
             </div>
           </>
         }
