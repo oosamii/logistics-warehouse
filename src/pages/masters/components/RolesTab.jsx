@@ -34,6 +34,7 @@ const RolesTab = () => {
   const [formErrors, setFormErrors] = useState({});
   const [showDelete, setShowDelete] = useState(false);
   const [deleteObj, setDeleteObj] = useState(null);
+  const [showAccessModal, setShowAccessModal] = useState(false); // new
 
   const roleCode = getUserRole();
   const isAdmin = roleCode === "ADMIN";
@@ -182,6 +183,12 @@ const RolesTab = () => {
     setShowForm(true);
   };
 
+  const openAccess = async (r) => {
+    setSelectedRole(r);
+    await fetchRoleDetails(r.id);
+    setShowAccessModal(true);
+  };
+
   const submitForm = async () => {
     if (!validate()) return;
 
@@ -302,11 +309,7 @@ const RolesTab = () => {
                       </button>
                       <button
                         className="rounded-md border border-gray-200 bg-white px-3 py-1.5 text-xs text-gray-700"
-                        onClick={async () => {
-                          setSelectedRole(row);
-                          await fetchRoleDetails(row.id);
-                          // toast.success(`Selected role: ${row.role_name}`);
-                        }}
+                        onClick={() => openAccess(row)}
                       >
                         Manage Access
                       </button>
@@ -382,9 +385,7 @@ const RolesTab = () => {
   };
 
   return (
-    <div
-      className={`grid grid-cols-1 gap-6 ${selectedRole ? "lg:grid-cols-2" : "lg:grid-cols-1"}`}
-    >
+    <div className="grid grid-cols-1 gap-6">
       <div>
         <div className="mb-4 flex items-center justify-end">
           {canCreate && (
@@ -414,87 +415,7 @@ const RolesTab = () => {
       </div>
 
       {/* RIGHT: Role Access Matrix */}
-      {selectedRole && (
-        <div className="rounded-lg border border-gray-200 bg-white">
-          <>
-            <div className="border-b px-5 py-4 flex items-center justify-between">
-              <div>
-                <div className="text-sm font-semibold text-gray-900">
-                  Role Access Control
-                </div>
-                <div className="text-xs text-gray-600 mt-1">
-                  {selectedRole
-                    ? `Editing: ${selectedRole.role_name} (${selectedRole.role_code})`
-                    : "Select a role → click “Manage Access”"}
-                </div>
-              </div>
-              <button
-                onClick={() => setSelectedRole(null)}
-                className="ml-2 text-xs text-gray-600 hover:text-red-800"
-              >
-                X
-              </button>
-            </div>
-
-            <div className="p-5">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
-                        Module
-                      </th>
-                      {permissions.map((p) => (
-                        <th
-                          key={p.id}
-                          className="px-4 py-3 text-left text-xs font-semibold text-gray-500"
-                        >
-                          {p.code}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-
-                  <tbody className="divide-y divide-gray-200 bg-white">
-                    {modules.map((m) => (
-                      <tr key={m.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-3 text-sm text-gray-800">
-                          <div className="font-medium">{m.name}</div>
-                          <div className="text-xs text-gray-500">{m.code}</div>
-                        </td>
-
-                        {permissions.map((p) => {
-                          const checked = isGranted(m.id, p.id);
-                          return (
-                            <td key={p.id} className="px-4 py-3">
-                              <label className="inline-flex items-center gap-2">
-                                <input
-                                  type="checkbox"
-                                  checked={checked}
-                                  onChange={(e) =>
-                                    toggleGrant(m.id, p.id, e.target.checked)
-                                  }
-                                  className="h-4 w-4 rounded border-gray-300"
-                                />
-                              </label>
-                            </td>
-                          );
-                        })}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-
-                <div className="mt-3 text-xs text-gray-500">
-                  Note: Current API set shared does not include “GET assigned
-                  permissions”. Once you share it, I’ll load the existing grants
-                  automatically.
-                </div>
-              </div>
-            </div>
-          </>
-        </div>
-      )}
+      {/* access control modal moved below, original inline panel removed */}
 
       {/* Role Create/Edit Modal */}
       {showForm && (
@@ -573,6 +494,91 @@ const RolesTab = () => {
                 </label>
               </div>
             )}
+          </div>
+        </Modal>
+      )}
+
+      {/* Access Control Modal */}
+      {showAccessModal && selectedRole && (
+        <Modal
+          title="Role Access Control"
+          subtitle={`Editing: ${selectedRole.role_name} (${selectedRole.role_code})`}
+          onClose={() => {
+            setShowAccessModal(false);
+            setSelectedRole(null);
+            setGrantedMap({});
+          }}
+          footer={
+            <>
+              <button
+                onClick={() => {
+                  setShowAccessModal(false);
+                  setSelectedRole(null);
+                  setGrantedMap({});
+                }}
+                className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700"
+              >
+                Close
+              </button>
+            </>
+          }
+        >
+          {/* wrapper gives independent scrollbars */}
+          <div className="p-5">
+            <div className="overflow-auto max-h-[60vh]">
+              <table className="min-w-full divide-y divide-gray-200">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-left text-xs font-semibold text-gray-500">
+                      Module
+                    </th>
+                    {permissions.map((p) => (
+                      <th
+                        key={p.id}
+                        className="px-4 py-3 text-left text-xs font-semibold text-gray-500"
+                      >
+                        {p.code}
+                      </th>
+                    ))}
+                  </tr>
+                </thead>
+
+                <tbody className="divide-y divide-gray-200 bg-white">
+                  {modules.map((m) => (
+                    <tr key={m.id} className="hover:bg-gray-50">
+                      <td className="px-4 py-3 text-sm text-gray-800">
+                        <div className="font-medium">{m.name}</div>
+                        <div className="text-xs text-gray-500">{m.code}</div>
+                      </td>
+
+                      {permissions.map((p) => {
+                        const checked = isGranted(m.id, p.id);
+                        return (
+                          <td key={p.id} className="px-4 py-3">
+                            <label className="inline-flex items-center gap-2">
+                              <input
+                                type="checkbox"
+                                checked={checked}
+                                onChange={(e) =>
+                                  toggleGrant(m.id, p.id, e.target.checked)
+                                }
+                                className="h-4 w-4 rounded border-gray-300"
+                              />
+                            </label>
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+
+              <div className="mt-3 text-xs text-gray-500">
+                Note: Current API set shared does not include “GET assigned
+                permissions”. Once you share it, I’ll load the existing grants
+                automatically.
+              </div>
+            </div>
           </div>
         </Modal>
       )}

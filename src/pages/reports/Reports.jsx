@@ -1,149 +1,5 @@
-// // src/pages/reports/Reports.jsx
-// import React, { useMemo, useState } from "react";
-// import PageHeader from "../../pages/components/PageHeader";
-// import FilterBar from "../../pages/components/FilterBar";
-// import {
-//   CalendarDays,
-//   Download,
-//   Clock,
-//   Hourglass,
-//   Target,
-//   Boxes,
-//   Activity,
-//   Package,
-//   Truck,
-//   IndianRupee,
-// } from "lucide-react";
-
-// import ReportCard from "./components/ReportCard";
-
-// export default function Reports() {
-//   return (
-//     <div className="min-h-screen bg-gray-50">
-//       <div className="mx-auto w-full max-w-7xl sm:px-4 py-5">
-//         <PageHeader
-//           title="Reports"
-//           subtitle="Inbound to dispatch performance, inventory accuracy, space utilization and billing"
-//           right={
-//             <div className="flex items-center gap-2">
-//               <button
-//                 type="button"
-//                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
-//               >
-//                 <CalendarDays className="h-4 w-4" />
-//                 Schedule Report
-//               </button>
-
-//               <button
-//                 type="button"
-//                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm font-medium text-gray-900 shadow-sm hover:bg-gray-50"
-//               >
-//                 <Download className="h-4 w-4" />
-//                 Export
-//               </button>
-//             </div>
-//           }
-//         />
-
-//         {/* Cards */}
-//         <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-//           <ReportCard
-//             title="Inbound TAT"
-//             Icon={Clock}
-//             leftLabel="ASNs Received"
-//             leftValue="156"
-//             rightLabel="Avg TAT"
-//             rightValue="4.2h"
-//             rightSub="↑ 0.5h"
-//             rightSubTone="danger"
-//             route="/reports/inboundTAT"
-//           />
-
-//           <ReportCard
-//             title="Putaway Aging"
-//             Icon={Hourglass}
-//             leftLabel="Pending Tasks"
-//             leftValue="45"
-//             rightLabel="Aging > 24h"
-//             rightValue="2"
-//             rightSubTone="danger"
-//             route="/putawayAging"
-//           />
-
-//           <ReportCard
-//             title="Space Utilization"
-//             Icon={Boxes}
-//             leftLabel="Avg Utilized"
-//             leftValue="85%"
-//             rightLabel="Overfilled"
-//             rightValue=""
-//             rightSub="High"
-//             rightSubTone="danger"
-//             route="/spaceUtilization"
-//           />
-
-//           <ReportCard
-//             title="Pick Productivity"
-//             Icon={Activity}
-//             leftLabel="Picks / Hour"
-//             leftValue="142"
-//             rightLabel="Avg Time"
-//             rightValue="3m 45s"
-//             rightSub="↓ 12s"
-//             rightSubTone="success"
-//             route="/pickProductivity"
-//           />
-
-//           <ReportCard
-//             title="Pack Productivity"
-//             Icon={Package}
-//             leftLabel="Cartons / Hour"
-//             leftValue="58"
-//             rightLabel="Avg Pack Time"
-//             rightValue="6m 10s"
-//             rightSub="Stable"
-//             rightSubTone="neutral"
-//             route="/packProductivity"
-//           />
-//           <ReportCard
-//             title="Outbound SLA"
-//             Icon={Truck}
-//             leftLabel="Orders Shipped"
-//             leftValue="1,240"
-//             rightLabel="Within SLA"
-//             rightValue=""
-//             rightSub="98.5%"
-//             rightSubTone="success"
-//             route="/outboundSLA"
-//           />
-//         </div>
-
-//         <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-//           <ReportCard
-//             title="Billing Revenue"
-//             Icon={IndianRupee}
-//             leftLabel="Billable Events"
-//             leftValue="5,600"
-//             rightLabel="Est. Revenue"
-//             rightValue="₹4.5L"
-//             rightSub="↑ ₹25K"
-//             rightSubTone="success"
-//             route="/billingRevenue"
-//           />
-//         </div>
-//       </div>
-//     </div>
-//   );
-// }
-
 // src/pages/reports/Reports.jsx
-import React, {
-  useCallback,
-  useEffect,
-  useMemo,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import PageHeader from "../../pages/components/PageHeader";
 import {
   CalendarDays,
@@ -156,9 +12,11 @@ import {
   Truck,
   IndianRupee,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
 import ReportCard from "./components/ReportCard";
 import http from "../../api/http";
+import { useAccess } from "../utils/useAccess";
 
 // ---------------- helpers ----------------
 const toNum = (v) => {
@@ -187,6 +45,22 @@ const fmtSecondsAsMmSs = (sec) => {
 };
 
 export default function Reports() {
+  const navigate = useNavigate();
+  const reportsAccess = useAccess("REPORTS");
+  const inboundAccess = useAccess("INBOUND");
+  const inventoryAccess = useAccess("INVENTORY");
+  const pickingAccess = useAccess("PICKING");
+  const packingAccess = useAccess("PACKING");
+  const outboundAccess = useAccess("OUTBOUND");
+  const billingAccess = useAccess("BILLING");
+
+  // Redirect if no read access to reports
+  useEffect(() => {
+    if (!reportsAccess.loading && !reportsAccess.canRead) {
+      navigate("/unauthorized");
+    }
+  }, [reportsAccess.loading, reportsAccess.canRead, navigate]);
+
   const [loading, setLoading] = useState(false);
   const [err, setErr] = useState("");
 
@@ -336,6 +210,16 @@ export default function Reports() {
     };
   }, [summary]);
 
+  if (reportsAccess.loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <div className="mx-auto w-full max-w-7xl sm:px-4 py-5">
+          <div className="p-6 text-center text-gray-600">Loading...</div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
       <div className="mx-auto w-full max-w-7xl sm:px-4 py-5">
@@ -379,92 +263,106 @@ export default function Reports() {
 
         {/* Cards */}
         <div className="mt-5 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <ReportCard
-            title="Inbound TAT"
-            Icon={Clock}
-            leftLabel="ASNs Received"
-            leftValue={cards.inbound.leftValue}
-            rightLabel="Avg TAT"
-            rightValue={cards.inbound.rightValue}
-            rightSub={cards.inbound.rightSub}
-            rightSubTone={cards.inbound.rightSubTone}
-            route="/reports/inboundTAT"
-          />
+          {inboundAccess.canRead && (
+            <ReportCard
+              title="Inbound TAT"
+              Icon={Clock}
+              leftLabel="ASNs Received"
+              leftValue={cards.inbound.leftValue}
+              rightLabel="Avg TAT"
+              rightValue={cards.inbound.rightValue}
+              rightSub={cards.inbound.rightSub}
+              rightSubTone={cards.inbound.rightSubTone}
+              route="/reports/inboundTAT"
+            />
+          )}
 
-          <ReportCard
-            title="Putaway Aging"
-            Icon={Hourglass}
-            leftLabel="Pending Tasks"
-            leftValue={cards.putaway.leftValue}
-            rightLabel="Aging > 24h"
-            rightValue={cards.putaway.rightValue}
-            rightSub={cards.putaway.rightSub}
-            rightSubTone={cards.putaway.rightSubTone}
-            route="/putawayAging"
-          />
+          {inboundAccess.canRead && (
+            <ReportCard
+              title="Putaway Aging"
+              Icon={Hourglass}
+              leftLabel="Pending Tasks"
+              leftValue={cards.putaway.leftValue}
+              rightLabel="Aging > 24h"
+              rightValue={cards.putaway.rightValue}
+              rightSub={cards.putaway.rightSub}
+              rightSubTone={cards.putaway.rightSubTone}
+              route="/putawayAging"
+            />
+          )}
 
-          <ReportCard
-            title="Space Utilization"
-            Icon={Boxes}
-            leftLabel="Avg Utilized"
-            leftValue={cards.space.leftValue}
-            rightLabel="Overfilled"
-            rightValue={cards.space.rightValue}
-            rightSub={cards.space.rightSub}
-            rightSubTone={cards.space.rightSubTone}
-            route="/spaceUtilization"
-          />
+          {inventoryAccess.canRead && (
+            <ReportCard
+              title="Space Utilization"
+              Icon={Boxes}
+              leftLabel="Avg Utilized"
+              leftValue={cards.space.leftValue}
+              rightLabel="Overfilled"
+              rightValue={cards.space.rightValue}
+              rightSub={cards.space.rightSub}
+              rightSubTone={cards.space.rightSubTone}
+              route="/spaceUtilization"
+            />
+          )}
 
-          <ReportCard
-            title="Pick Productivity"
-            Icon={Activity}
-            leftLabel="Picks / Hour"
-            leftValue={cards.pick.leftValue}
-            rightLabel="Avg Time"
-            rightValue={cards.pick.rightValue}
-            rightSub={cards.pick.rightSub}
-            rightSubTone={cards.pick.rightSubTone}
-            route="/pickProductivity"
-          />
+          {pickingAccess.canRead && (
+            <ReportCard
+              title="Pick Productivity"
+              Icon={Activity}
+              leftLabel="Picks / Hour"
+              leftValue={cards.pick.leftValue}
+              rightLabel="Avg Time"
+              rightValue={cards.pick.rightValue}
+              rightSub={cards.pick.rightSub}
+              rightSubTone={cards.pick.rightSubTone}
+              route="/pickProductivity"
+            />
+          )}
 
-          <ReportCard
-            title="Pack Productivity"
-            Icon={Package}
-            leftLabel="Cartons / Hour"
-            leftValue={cards.pack.leftValue}
-            rightLabel="Avg Pack Time"
-            rightValue={cards.pack.rightValue}
-            rightSub={cards.pack.rightSub}
-            rightSubTone={cards.pack.rightSubTone}
-            route="/packProductivity"
-          />
+          {packingAccess.canRead && (
+            <ReportCard
+              title="Pack Productivity"
+              Icon={Package}
+              leftLabel="Cartons / Hour"
+              leftValue={cards.pack.leftValue}
+              rightLabel="Avg Pack Time"
+              rightValue={cards.pack.rightValue}
+              rightSub={cards.pack.rightSub}
+              rightSubTone={cards.pack.rightSubTone}
+              route="/packProductivity"
+            />
+          )}
 
-          <ReportCard
-            title="Outbound SLA"
-            Icon={Truck}
-            leftLabel="Orders Shipped"
-            leftValue={cards.outbound.leftValue}
-            rightLabel="Within SLA"
-            rightValue={cards.outbound.rightValue}
-            rightSub={cards.outbound.rightSub}
-            rightSubTone={cards.outbound.rightSubTone}
-            route="/outboundSLA"
-          />
+          {outboundAccess.canRead && (
+            <ReportCard
+              title="Outbound SLA"
+              Icon={Truck}
+              leftLabel="Orders Shipped"
+              leftValue={cards.outbound.leftValue}
+              rightLabel="Within SLA"
+              rightValue={cards.outbound.rightValue}
+              rightSub={cards.outbound.rightSub}
+              rightSubTone={cards.outbound.rightSubTone}
+              route="/outboundSLA"
+            />
+          )}
         </div>
 
-        <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
-          <ReportCard
-            title="Billing Revenue"
-            Icon={IndianRupee}
-            leftLabel="Billable Events"
-            leftValue={cards.billing.leftValue}
-            rightLabel="Est. Revenue"
-            rightValue={cards.billing.rightValue}
-            rightSub={cards.billing.rightSub}
-            rightSubTone={cards.billing.rightSubTone}
-            route="/billingRevenue"
-          />
-        </div>
+        {billingAccess.canRead && (
+          <div className="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-3">
+            <ReportCard
+              title="Billing Revenue"
+              Icon={IndianRupee}
+              leftLabel="Billable Events"
+              leftValue={cards.billing.leftValue}
+              rightLabel="Est. Revenue"
+              rightValue={cards.billing.rightValue}
+              rightSub={cards.billing.rightSub}
+              rightSubTone={cards.billing.rightSubTone}
+              route="/billingRevenue"
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,18 +1,27 @@
 // Dashboard.jsx (updated to pass warehouseId to DashboardQueue)
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Download, Boxes, Upload } from "lucide-react";
 import PageHeader from "../components/PageHeader";
-import FilterBar from "../components/FilterBar";
 import StatCard from "../components/StatCard";
 import SectionHeader from "../components/SectionHeader";
-import DashboardWidgets from "./DashboardWidgets";
 import DashboardQueue from "./DashboardQueue";
 import http from "../../api/http";
 import { useNavigate } from "react-router-dom";
+import { useAccess } from "../utils/useAccess";
 
 const Dashboard = () => {
   const navigate = useNavigate();
+  const dashboardAccess = useAccess("DASHBOARD");
+  const inboundAccess = useAccess("INBOUND");
+  const inventoryAccess = useAccess("INVENTORY");
+  const outboundAccess = useAccess("OUTBOUND");
 
+  // Redirect if no read access to dashboard
+  useEffect(() => {
+    if (!dashboardAccess.loading && !dashboardAccess.canRead) {
+      navigate("/unauthorized");
+    }
+  }, [dashboardAccess.loading, dashboardAccess.canRead, navigate]);
   const [inboundStats, setInboundStats] = useState({
     confirmed: "0",
     inReceiving: "0",
@@ -49,34 +58,23 @@ const Dashboard = () => {
 
   const [selectedWarehouse, setSelectedWarehouse] = useState("1"); // Default warehouse ID
 
-  const dashboardFilters = [
-    {
-      type: "select",
-      label: "Time Period",
-      value: "Today",
-      className: "w-[160px]",
-    },
-    {
-      type: "select",
-      label: "Warehouse",
-      value: "WH-NYC-01",
-      className: "w-[160px]",
-      onChange: (e) => setSelectedWarehouse(e.target.value),
-    },
-    {
-      type: "select",
-      label: "Client",
-      value: "All Clients",
-      className: "w-[180px]",
-    },
-  ];
-
-  // Fetch data when warehouse changes
+  // Fetch data based on permissions when warehouse changes
   useEffect(() => {
-    fetchInboundStats();
-    fetchInventoryStats();
-    fetchOutboundStats();
-  }, [selectedWarehouse]);
+    if (inboundAccess.canRead) {
+      fetchInboundStats();
+    }
+    if (inventoryAccess.canRead) {
+      fetchInventoryStats();
+    }
+    if (outboundAccess.canRead) {
+      fetchOutboundStats();
+    }
+  }, [
+    selectedWarehouse,
+    inboundAccess.canRead,
+    inventoryAccess.canRead,
+    outboundAccess.canRead,
+  ]);
 
   const fetchInboundStats = async () => {
     setLoading((prev) => ({ ...prev, inbound: true }));
@@ -177,6 +175,15 @@ const Dashboard = () => {
   const asnCompleted =
     parseInt(inboundStats.closed) + parseInt(inboundStats.grnPosted);
 
+  // Show loading while checking permissions
+  if (dashboardAccess.loading) {
+    return (
+      <div className="max-w-full">
+        <div className="p-6 text-center text-gray-600">Loading...</div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-full">
       <PageHeader
@@ -214,201 +221,214 @@ const Dashboard = () => {
 
       {/* <FilterBar filters={dashboardFilters} /> */}
 
-      <SectionHeader
-        title="Inbound Operations"
-        icon={<Download size={16} className="text-blue-600" />}
-      />
+      {/* INBOUND SECTION - Only show if user has read access */}
+      {inboundAccess.canRead && (
+        <>
+          <SectionHeader
+            title="Inbound Operations"
+            icon={<Download size={16} className="text-blue-600" />}
+          />
 
-      {loading.inbound && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="ASN Pending"
-            value="Loading..."
-            accentColor="#3B82F6"
-          />
-          <StatCard
-            title="Receiving Today"
-            value="Loading..."
-            accentColor="#3B82F6"
-          />
-          <StatCard
-            title="Putaway Pending"
-            value="Loading..."
-            accentColor="#3B82F6"
-          />
-          <StatCard
-            title="ASN Completed"
-            value="Loading..."
-            accentColor="#3B82F6"
-          />
-        </div>
+          {loading.inbound && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="ASN Pending"
+                value="Loading..."
+                accentColor="#3B82F6"
+              />
+              <StatCard
+                title="Receiving Today"
+                value="Loading..."
+                accentColor="#3B82F6"
+              />
+              <StatCard
+                title="Putaway Pending"
+                value="Loading..."
+                accentColor="#3B82F6"
+              />
+              <StatCard
+                title="ASN Completed"
+                value="Loading..."
+                accentColor="#3B82F6"
+              />
+            </div>
+          )}
+
+          {error.inbound && !loading.inbound && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="col-span-4 text-center text-red-500 py-4">
+                {error.inbound}
+              </div>
+            </div>
+          )}
+
+          {!loading.inbound && !error.inbound && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="ASN Pending"
+                value={inboundStats.confirmed}
+                accentColor="#3B82F6"
+              />
+              <StatCard
+                title="Receiving Today"
+                value={inboundStats.inReceiving}
+                accentColor="#3B82F6"
+              />
+              <StatCard
+                title="Putaway Pending"
+                value={inboundStats.putawayPending}
+                accentColor="#3B82F6"
+              />
+              <StatCard
+                title="ASN Completed"
+                value={asnCompleted.toString()}
+                accentColor="#3B82F6"
+              />
+            </div>
+          )}
+        </>
       )}
 
-      {error.inbound && !loading.inbound && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="col-span-4 text-center text-red-500 py-4">
-            {error.inbound}
-          </div>
-        </div>
+      {/* INVENTORY SECTION - Only show if user has read access */}
+      {inventoryAccess.canRead && (
+        <>
+          <SectionHeader
+            title="Inventory Status"
+            icon={<Boxes size={16} className="text-orange-500" />}
+          />
+
+          {/* Show loading state for inventory */}
+          {loading.inventory && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="On-hand SKUs"
+                value="Loading..."
+                accentColor="#F59E0B"
+              />
+              <StatCard
+                title="Available Qty"
+                value="Loading..."
+                accentColor="#F59E0B"
+              />
+              <StatCard
+                title="Blocked / Hold"
+                value="Loading..."
+                accentColor="#F59E0B"
+              />
+              <StatCard
+                title="Low Stock Alerts"
+                value="Loading..."
+                accentColor="#F59E0B"
+              />
+            </div>
+          )}
+
+          {/* Show error state for inventory */}
+          {error.inventory && !loading.inventory && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="col-span-4 text-center text-red-500 py-4">
+                {error.inventory}
+              </div>
+            </div>
+          )}
+
+          {/* Show actual inventory data */}
+          {!loading.inventory && !error.inventory && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="On-hand SKUs"
+                value={inventoryStats.onHandSkus}
+                accentColor="#F59E0B"
+              />
+              <StatCard
+                title="Available Qty"
+                value={inventoryStats.availableQty}
+                accentColor="#F59E0B"
+              />
+              <StatCard
+                title="Blocked / Hold"
+                value={inventoryStats.blockedHold}
+                accentColor="#F59E0B"
+              />
+              <StatCard
+                title="Low Stock Alerts"
+                value={inventoryStats.lowStockAlerts}
+                accentColor="#F59E0B"
+              />
+            </div>
+          )}
+        </>
       )}
 
-      {!loading.inbound && !error.inbound && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="ASN Pending"
-            value={inboundStats.confirmed}
-            accentColor="#3B82F6"
+      {/* OUTBOUND SECTION - Only show if user has read access */}
+      {outboundAccess.canRead && (
+        <>
+          <SectionHeader
+            title="Outbound Operations"
+            icon={<Upload size={16} className="text-green-600" />}
           />
-          <StatCard
-            title="Receiving Today"
-            value={inboundStats.inReceiving}
-            accentColor="#3B82F6"
-          />
-          <StatCard
-            title="Putaway Pending"
-            value={inboundStats.putawayPending}
-            accentColor="#3B82F6"
-          />
-          <StatCard
-            title="ASN Completed"
-            value={asnCompleted.toString()}
-            accentColor="#3B82F6"
-          />
-        </div>
-      )}
 
-      {/* INVENTORY */}
-      <SectionHeader
-        title="Inventory Status"
-        icon={<Boxes size={16} className="text-orange-500" />}
-      />
+          {/* Show loading state for outbound */}
+          {loading.outbound && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="Orders Pending"
+                value="Loading..."
+                accentColor="#10B981"
+              />
+              <StatCard
+                title="Picking Pending"
+                value="Loading..."
+                accentColor="#10B981"
+              />
+              <StatCard
+                title="Packed Ready"
+                value="Loading..."
+                accentColor="#10B981"
+              />
+              <StatCard
+                title="Shipped Today"
+                value="Loading..."
+                accentColor="#10B981"
+              />
+            </div>
+          )}
 
-      {/* Show loading state for inventory */}
-      {loading.inventory && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="On-hand SKUs"
-            value="Loading..."
-            accentColor="#F59E0B"
-          />
-          <StatCard
-            title="Available Qty"
-            value="Loading..."
-            accentColor="#F59E0B"
-          />
-          <StatCard
-            title="Blocked / Hold"
-            value="Loading..."
-            accentColor="#F59E0B"
-          />
-          <StatCard
-            title="Low Stock Alerts"
-            value="Loading..."
-            accentColor="#F59E0B"
-          />
-        </div>
-      )}
+          {/* Show error state for outbound */}
+          {error.outbound && !loading.outbound && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="col-span-4 text-center text-red-500 py-4">
+                {error.outbound}
+              </div>
+            </div>
+          )}
 
-      {/* Show error state for inventory */}
-      {error.inventory && !loading.inventory && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="col-span-4 text-center text-red-500 py-4">
-            {error.inventory}
-          </div>
-        </div>
-      )}
-
-      {/* Show actual inventory data */}
-      {!loading.inventory && !error.inventory && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="On-hand SKUs"
-            value={inventoryStats.onHandSkus}
-            accentColor="#F59E0B"
-          />
-          <StatCard
-            title="Available Qty"
-            value={inventoryStats.availableQty}
-            accentColor="#F59E0B"
-          />
-          <StatCard
-            title="Blocked / Hold"
-            value={inventoryStats.blockedHold}
-            accentColor="#F59E0B"
-          />
-          <StatCard
-            title="Low Stock Alerts"
-            value={inventoryStats.lowStockAlerts}
-            accentColor="#F59E0B"
-          />
-        </div>
-      )}
-
-      {/* OUTBOUND */}
-      <SectionHeader
-        title="Outbound Operations"
-        icon={<Upload size={16} className="text-green-600" />}
-      />
-
-      {/* Show loading state for outbound */}
-      {loading.outbound && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Orders Pending"
-            value="Loading..."
-            accentColor="#10B981"
-          />
-          <StatCard
-            title="Picking Pending"
-            value="Loading..."
-            accentColor="#10B981"
-          />
-          <StatCard
-            title="Packed Ready"
-            value="Loading..."
-            accentColor="#10B981"
-          />
-          <StatCard
-            title="Shipped Today"
-            value="Loading..."
-            accentColor="#10B981"
-          />
-        </div>
-      )}
-
-      {/* Show error state for outbound */}
-      {error.outbound && !loading.outbound && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="col-span-4 text-center text-red-500 py-4">
-            {error.outbound}
-          </div>
-        </div>
-      )}
-
-      {/* Show actual outbound data */}
-      {!loading.outbound && !error.outbound && (
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <StatCard
-            title="Orders Pending"
-            value={outboundStats.ordersPending}
-            accentColor="#10B981"
-          />
-          <StatCard
-            title="Picking Pending"
-            value={outboundStats.pickingPending}
-            accentColor="#10B981"
-          />
-          <StatCard
-            title="Packed Ready"
-            value={outboundStats.packedReady}
-            accentColor="#10B981"
-          />
-          <StatCard
-            title="Shipped Today"
-            value={outboundStats.shippedToday}
-            accentColor="#10B981"
-          />
-        </div>
+          {/* Show actual outbound data */}
+          {!loading.outbound && !error.outbound && (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+              <StatCard
+                title="Orders Pending"
+                value={outboundStats.ordersPending}
+                accentColor="#10B981"
+              />
+              <StatCard
+                title="Picking Pending"
+                value={outboundStats.pickingPending}
+                accentColor="#10B981"
+              />
+              <StatCard
+                title="Packed Ready"
+                value={outboundStats.packedReady}
+                accentColor="#10B981"
+              />
+              <StatCard
+                title="Shipped Today"
+                value={outboundStats.shippedToday}
+                accentColor="#10B981"
+              />
+            </div>
+          )}
+        </>
       )}
 
       <DashboardQueue warehouseId={selectedWarehouse} />

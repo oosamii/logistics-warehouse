@@ -40,15 +40,37 @@ export const AuthProvider = ({ children }) => {
       return { ok: true, source: "cache" };
     }
 
-    const roleId = user?.roles?.[0]?.id;
-    if (!roleId) return { ok: false, reason: "No roleId on user" };
+    // Get all role IDs
+    const roleIds = user?.roles?.map((r) => r.id) || [];
+    if (!roleIds.length) return { ok: false, reason: "No roleIds on user" };
 
     try {
       setLoadingPerms(true);
-      const res = await http.get(`/roles/${roleId}`);
-      const permsMap = normalizePermissions(res?.data?.data?.permissions || []);
-      setPerms(permsMap);
-      setPermState(permsMap);
+
+      const results = await Promise.allSettled(
+        roleIds.map((id) => http.get(`/roles/${id}`)),
+      );
+
+      const mergedPerms = results
+        .filter((r) => r.status === "fulfilled")
+        .map((r) =>
+          normalizePermissions(r.value?.data?.data?.permissions || []),
+        )
+        .reduce((merged, perms) => {
+          Object.keys(perms).forEach((moduleCode) => {
+            if (!merged[moduleCode]) {
+              merged[moduleCode] = {};
+            }
+            merged[moduleCode] = {
+              ...merged[moduleCode],
+              ...perms[moduleCode],
+            };
+          });
+          return merged;
+        }, {});
+
+      setPerms(mergedPerms);
+      setPermState(mergedPerms);
       return { ok: true, source: "api" };
     } catch (e) {
       clearAuth();
