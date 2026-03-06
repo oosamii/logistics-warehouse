@@ -441,15 +441,15 @@ const UsersTab = () => {
       }
 
       // Remove unchecked roles (one-by-one delete)
-      if (toRemove.length) {
-        await Promise.all(
-          toRemove.map((rid) =>
-            http.delete("/user-roles", {
-              data: { user_id: userId, role_id: rid },
-            }),
-          ),
-        );
-      }
+      // if (toRemove.length) {
+      //   await Promise.all(
+      //     toRemove.map((rid) =>
+      //       http.delete("/user-roles", {
+      //         data: { user_id: userId, role_id: rid },
+      //       }),
+      //     ),
+      //   );
+      // }
 
       toast.success("Roles updated successfully.");
       setShowRoles(false);
