@@ -7,8 +7,10 @@ import http from "../../../api/http";
 import AddSkuModal from "./modals/AddSkuModal";
 import { useAccess } from "../../utils/useAccess";
 import { getUserRole } from "../../utils/authStorage";
+import { useNavigate } from "react-router-dom";
 
 const SKUsTab = () => {
+  const navigate = useNavigate();
   const [filtersState, setFiltersState] = useState({
     client: "All Clients",
     category: "All Categories",
@@ -196,9 +198,12 @@ const SKUsTab = () => {
         title: "SKU Code",
         render: (row) => (
           <div>
-            <div className="text-sm font-semibold text-blue-600">
+            <button
+              className="text-sm font-semibold text-blue-600 hover:underline"
+              onClick={() => navigate(`/inventory/sku/${row.id}?page=putaway`)}
+            >
               {row.sku_code}
-            </div>
+            </button>
             <div className="text-xs text-gray-500">{row.sku_name}</div>
           </div>
         ),
