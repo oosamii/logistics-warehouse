@@ -686,12 +686,12 @@ const Putaway = () => {
         actions={
           <>
             <div>
-              <button
+              {/* <button
                 onClick={() => toast.info("Export feature coming soon!")}
                 className="rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-colors"
               >
                 Export
-              </button>
+              </button> */}
               <p className="text-gray-500 text-xs"></p>
             </div>
             <div>

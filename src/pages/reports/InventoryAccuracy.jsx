@@ -151,10 +151,10 @@ export default function InventoryAccuracy() {
           ]}
           actions={
             <>
-              <button className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
+              {/* <button className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
                 <Download className="h-4 w-4" />
                 Export Report
-              </button>
+              </button> */}
               <button className="inline-flex items-center gap-2 rounded-md border border-gray-200 bg-white px-3 py-2 text-sm">
                 <Printer className="h-4 w-4" />
                 Print

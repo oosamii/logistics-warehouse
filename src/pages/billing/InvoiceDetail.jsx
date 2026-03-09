@@ -110,13 +110,13 @@ const InvoiceDetail = () => {
                 Back
               </button>
 
-              <button
+              {/* <button
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"
                 type="button"
               >
                 <Download size={16} />
                 PDF
-              </button>
+              </button> */}
 
               <button
                 className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-semibold text-gray-800 hover:bg-gray-50"

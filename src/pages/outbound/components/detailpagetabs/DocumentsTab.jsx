@@ -87,14 +87,14 @@ const DocumentsTab = ({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
+          {/* <button
             type="button"
             onClick={onDownloadAll}
             className="px-4 py-2 border rounded-md text-sm bg-white inline-flex items-center gap-2"
           >
             <Download size={16} />
             Download All
-          </button>
+          </button> */}
 
           <button
             type="button"
@@ -181,7 +181,7 @@ const DocumentsTab = ({
                         <Eye size={16} />
                       </button>
 
-                      <button
+                      {/* <button
                         type="button"
                         onClick={() => onDownload?.(r)}
                         className={[
@@ -193,7 +193,7 @@ const DocumentsTab = ({
                         title="Download"
                       >
                         <Download size={16} />
-                      </button>
+                      </button> */}
 
                       <button
                         type="button"

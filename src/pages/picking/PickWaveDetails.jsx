@@ -63,7 +63,7 @@ const PickWaveDetails = () => {
       setLoading(true);
       setError(null);
       const response = await http.get(`/pick-waves/${waveId}`);
-      console.log("Wave details fetched:", response.data);
+      // console.log("Wave details fetched:", response.data);
       setWave(response.data);
     } catch (err) {
       console.error("Error fetching wave details:", err);
@@ -267,8 +267,8 @@ const PickWaveDetails = () => {
       : 0;
 
   // Debug log to check status
-  console.log("Current wave status:", wave.status);
-  console.log("Can release:", canRelease());
+  // console.log("Current wave status:", wave.status);
+  // console.log("Can release:", canRelease());
 
   return (
     <div className="min-h-screen bg-gray-50 p-4 md:p-6">
@@ -364,10 +364,10 @@ const PickWaveDetails = () => {
                 </svg>
                 Refresh
               </button>
-              <button className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
+              {/* <button className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <Download size={16} />
                 Export
-              </button>
+              </button> */}
               <button className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50">
                 <Printer size={16} />
                 Print

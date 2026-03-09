@@ -223,10 +223,10 @@ const OutboundOrders = () => {
     });
   };
 
-  // /pick-waves?order_id=22
   const getWaveIdByOrderId = async (orderId) => {
     try {
-      const res = await http.get(`/pick-waves/${orderId}`);
+      ///pick-waves/order/22/wave
+      const res = await http.get(`/pick-waves/order/${orderId}/wave`);
       // console.log(res);
       if (res.data) {
         return res.data?.id;

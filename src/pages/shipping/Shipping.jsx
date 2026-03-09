@@ -133,7 +133,7 @@ const Shipping = () => {
       <PageHeader
         title="Shipping"
         subtitle="Dispatch packed orders and manage carrier shipments"
-        actions={getHeaderActions()}
+        // actions={getHeaderActions()}
       />
 
       {/* Tabs */}

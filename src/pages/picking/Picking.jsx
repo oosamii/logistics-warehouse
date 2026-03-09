@@ -22,10 +22,10 @@ const Picking = () => {
 
   const actions = (
     <>
-      <button className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700">
+      {/* <button className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700">
         <Download size={16} />
         Export
-      </button>
+      </button> */}
       <button
         onClick={() => navigate("/picking/createPickWavePage")}
         className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm text-white"
@@ -153,7 +153,7 @@ const Picking = () => {
                 Pick Tasks
               </button>
 
-              <button
+              {/* <button
                 onClick={() => setActiveTab("exceptions")}
                 className={`px-2 pb-3 text-sm font-medium ${
                   activeTab === "exceptions"
@@ -162,7 +162,7 @@ const Picking = () => {
                 }`}
               >
                 Pick Exceptions
-              </button>
+              </button> */}
             </div>
           </div>
         )}

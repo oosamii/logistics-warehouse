@@ -149,12 +149,12 @@ const OrderDetail = () => {
       { key: "overview", label: "Overview", count: 0 },
       { key: "lines", label: "Lines", count: order.total_lines || 0 },
       { key: "allocation", label: "Allocation", count: allocationCount },
-      { key: "picking", label: "Picking", count: pickedCount },
-      { key: "packing", label: "Packing", count: packedCount },
-      { key: "shipping", label: "Shipping", count: shippingCount },
-      { key: "billing", label: "Billing", count: billingCount },
-      { key: "documents", label: "Documents", count: 0 },
-      { key: "audit", label: "Audit", count: 0 },
+      // { key: "picking", label: "Picking", count: pickedCount },
+      // { key: "packing", label: "Packing", count: packedCount },
+      // { key: "shipping", label: "Shipping", count: shippingCount },
+      // { key: "billing", label: "Billing", count: billingCount },
+      // { key: "documents", label: "Documents", count: 0 },
+      // { key: "audit", label: "Audit", count: 0 },
     ];
   }, [order]);
 

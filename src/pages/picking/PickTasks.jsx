@@ -227,7 +227,12 @@ const PickTasks = ({ onTaskSelect }) => {
       key: "task_no",
       title: "Task ID",
       render: (r) => (
-        <span className="font-semibold text-blue-600">{r.task_no}</span>
+        <button
+          onClick={() => navigate(`/picking/tasks/${r.id}`)}
+          className="font-semibold text-blue-600 hover:underline cursor-pointer"
+        >
+          {r.task_no}
+        </button>
       ),
     },
     {

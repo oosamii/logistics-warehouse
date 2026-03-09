@@ -163,7 +163,7 @@ const Masters = () => {
                 Import
               </PermissionButton>
             )}
-            {canExport && (
+            {/* {canExport && (
               <PermissionButton
                 module={active.module}
                 perm="EXPORT"
@@ -171,7 +171,7 @@ const Masters = () => {
               >
                 Export
               </PermissionButton>
-            )}
+            )} */}
           </div>
         }
       />

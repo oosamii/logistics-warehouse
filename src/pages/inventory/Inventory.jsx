@@ -61,10 +61,10 @@ const Inventory = () => {
           subtitle="View stock by SKU, location, batch and holds"
           actions={
             <>
-              <button className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700">
+              {/* <button className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700">
                 <Download size={16} />
                 Export
-              </button>
+              </button> */}
               <button className="flex items-center gap-2 rounded-md border border-gray-200 bg-white px-4 py-2 text-sm text-gray-700">
                 <RefreshCcw size={16} />
                 Cycle Count

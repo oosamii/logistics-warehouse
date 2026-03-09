@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
 import FilterBar from "../components/FilterBar";
 import CusTable from "../components/CusTable";
 import http from "../../api/http";
@@ -9,14 +9,23 @@ const StatusPill = ({ status }) => {
   const statusMap = {
     DRAFT: { label: "Draft", className: "bg-gray-100 text-gray-600" },
     RELEASED: { label: "Released", className: "bg-yellow-100 text-yellow-700" },
-    "IN PROGRESS": { label: "In Progress", className: "bg-blue-100 text-blue-700" },
-    PICKING_IN_PROGRESS: { label: "Picking In Progress", className: "bg-blue-100 text-blue-700" },
+    "IN PROGRESS": {
+      label: "In Progress",
+      className: "bg-blue-100 text-blue-700",
+    },
+    PICKING_IN_PROGRESS: {
+      label: "Picking In Progress",
+      className: "bg-blue-100 text-blue-700",
+    },
     COMPLETED: { label: "Completed", className: "bg-green-100 text-green-700" },
     CANCELLED: { label: "Cancelled", className: "bg-red-100 text-red-600" },
     CLOSED: { label: "Closed", className: "bg-purple-100 text-purple-700" },
   };
 
-  const statusInfo = statusMap[status] || { label: status, className: "bg-gray-100 text-gray-700" };
+  const statusInfo = statusMap[status] || {
+    label: status,
+    className: "bg-gray-100 text-gray-700",
+  };
 
   return (
     <span
@@ -29,7 +38,7 @@ const StatusPill = ({ status }) => {
 
 const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
   const navigate = useNavigate(); // Initialize navigate
-  
+
   const [filters, setFilters] = useState({
     date: "Today",
     warehouse: "All Warehouses",
@@ -111,7 +120,7 @@ const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
   const fetchPickWaves = async (page = 1) => {
     try {
       setLoading(true);
-      
+
       const params = {
         page,
         limit: 10,
@@ -127,7 +136,7 @@ const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
       }
 
       const response = await http.get("/pick-waves/", { params });
-      
+
       if (response.data) {
         setWaves(response.data.waves || []);
         setPagination({
@@ -151,7 +160,7 @@ const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
   const handleViewDetails = (wave) => {
     // Method 1: Using navigate (for separate page)
     navigate(`/picking/waves/${wave.id}`);
-    
+
     // OR Method 2: Using onWaveSelect prop (for same page tab)
     // if (onWaveSelect) {
     //   onWaveSelect(wave.id);
@@ -179,7 +188,12 @@ const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
       key: "wave_no",
       title: "Wave ID",
       render: (r) => (
-        <span className="font-semibold text-blue-600">{r.wave_no}</span>
+        <button
+          onClick={() => handleViewDetails(r)}
+          className="font-semibold text-blue-600 hover:underline cursor-pointer"
+        >
+          {r.wave_no}
+        </button>
       ),
     },
     // {
@@ -239,9 +253,9 @@ const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
       title: "Actions",
       render: (r) => (
         <div className="flex gap-2">
-          <button 
+          <button
             className="text-blue-600 text-sm font-medium hover:text-blue-800 px-2 py-1 hover:bg-blue-50 rounded"
-            onClick={() => handleViewDetails(r)} 
+            onClick={() => handleViewDetails(r)}
           >
             View Details
           </button>
@@ -296,9 +310,9 @@ const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
       ) : (
         <>
           <div className="rounded-lg border border-gray-200 bg-white">
-            <CusTable 
-              columns={columns} 
-              data={waves} 
+            <CusTable
+              columns={columns}
+              data={waves}
               pagination={pagination}
               onPageChange={handlePageChange}
               loading={loading}
@@ -307,7 +321,8 @@ const PickWaves = ({ onWaveSelect, onTaskSelect }) => {
 
           {waves.length === 0 && !loading && (
             <div className="text-center py-8 text-gray-500">
-              No pick waves found. Try adjusting your filters or create a new pick wave.
+              No pick waves found. Try adjusting your filters or create a new
+              pick wave.
             </div>
           )}
         </>

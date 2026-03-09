@@ -56,7 +56,7 @@ const Packing = () => {
           <PageHeader
             title="Packing"
             subtitle="Pack picked orders, generate cartons, print labels"
-            actions={actions}
+            // actions={actions}
           />
 
           {/* Tabs */}
