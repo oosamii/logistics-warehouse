@@ -6,9 +6,9 @@ const KeyValueCard = ({ title, items = [], onEdit }) => {
     <div className="h-full rounded-lg border border-gray-200 bg-white p-4 flex flex-col">
       <div className="flex items-center justify-between mb-3">
         <div className="text-sm font-semibold text-gray-900">{title}</div>
-        {onEdit && (
+        {/* {onEdit && (
           <button className="text-gray-400 hover:text-gray-700">✎</button>
-        )}
+        )} */}
       </div>
 
       <div className="space-y-3 flex-1">

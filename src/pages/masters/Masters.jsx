@@ -19,6 +19,7 @@ import WarehouseTab from "./components/WarehouseTab";
 import SupplierTab from "./components/SupplierTab";
 import DockTab from "./components/DockTab";
 import CarrierTab from "./components/CarrierTab";
+import PalletTab from "./components/PalletTab";
 
 const TAB_CONFIG = [
   {
@@ -43,11 +44,17 @@ const TAB_CONFIG = [
     Component: LocationsBinsTab,
   },
   { key: "Clients", slug: "clients", module: "CLIENTS", Component: ClientsTab },
+  // {
+  //   key: "Slotting Rules",
+  //   slug: "slotting-rules",
+  //   module: "SLOTTINGRULES",
+  //   Component: SlottingRulesTab,
+  // },
   {
-    key: "Slotting Rules",
-    slug: "slotting-rules",
-    module: "SLOTTINGRULES",
-    Component: SlottingRulesTab,
+    key: "Pallet",
+    slug: "pallets",
+    module: "PALLETS",
+    Component: PalletTab,
   },
   {
     key: "Warehouses",

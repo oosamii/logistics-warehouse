@@ -12,8 +12,14 @@ const OrderSummaryBar = ({ order }) => {
               {order.orderNo}
             </div>
             <Pill text={order.status} tone={order.statusTone || "gray"} />
-            <Pill text={order.allocationBadge} tone={order.allocationTone || "gray"} />
-            <Pill text={order.priorityBadge} tone={order.priorityTone || "gray"} />
+            <Pill
+              text={order.allocationBadge}
+              tone={order.allocationTone || "gray"}
+            />
+            <Pill
+              text={order.priorityBadge}
+              tone={order.priorityTone || "gray"}
+            />
           </div>
 
           <div className="grid grid-cols-2 sm:grid-cols-4 gap-6">
@@ -53,7 +59,7 @@ const OrderSummaryBar = ({ order }) => {
         </div>
 
         <div className="flex flex-wrap gap-2 lg:justify-end">
-          <button className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700">
+          {/* <button className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700">
             Open Picking
           </button>
           <button className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700">
@@ -61,7 +67,7 @@ const OrderSummaryBar = ({ order }) => {
           </button>
           <button className="px-3 py-1.5 text-xs rounded-md bg-blue-50 text-blue-700">
             Open Billing
-          </button>
+          </button> */}
         </div>
       </div>
     </div>

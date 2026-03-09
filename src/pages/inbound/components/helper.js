@@ -10,6 +10,8 @@ export const getOrderActionLabel = (status, canUpdate = true) => {
     DRAFT: canUpdate ? "Edit" : "",
     CONFIRMED: "Allocate",
     ALLOCATED: "Pick",
+    PICKING: "Pick",
+    PACKING: "Pack",
     PICKED: "Pack",
     PACKED: "Ship",
     IN_RECEIVING: "Resume",

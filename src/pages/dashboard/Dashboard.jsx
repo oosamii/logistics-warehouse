@@ -8,14 +8,14 @@ import DashboardQueue from "./DashboardQueue";
 import http from "../../api/http";
 import { useNavigate } from "react-router-dom";
 import { useAccess } from "../utils/useAccess";
-
+ 
 const Dashboard = () => {
   const navigate = useNavigate();
   const dashboardAccess = useAccess("DASHBOARD");
   const inboundAccess = useAccess("INBOUND");
   const inventoryAccess = useAccess("INVENTORY");
   const outboundAccess = useAccess("OUTBOUND");
-
+ 
   // Redirect if no read access to dashboard
   useEffect(() => {
     if (!dashboardAccess.loading && !dashboardAccess.canRead) {
@@ -29,35 +29,35 @@ const Dashboard = () => {
     closed: "0",
     grnPosted: "0",
   });
-
+ 
   const [inventoryStats, setInventoryStats] = useState({
     onHandSkus: "0",
     availableQty: "0",
     blockedHold: "0",
     lowStockAlerts: "0",
   });
-
+ 
   const [outboundStats, setOutboundStats] = useState({
     ordersPending: "0",
     pickingPending: "0",
     packedReady: "0",
     shippedToday: "0",
   });
-
+ 
   const [loading, setLoading] = useState({
     inbound: true,
     inventory: true,
     outbound: true,
   });
-
+ 
   const [error, setError] = useState({
     inbound: null,
     inventory: null,
     outbound: null,
   });
-
+ 
   const [selectedWarehouse, setSelectedWarehouse] = useState("1"); // Default warehouse ID
-
+ 
   // Fetch data based on permissions when warehouse changes
   useEffect(() => {
     if (inboundAccess.canRead) {
@@ -75,16 +75,16 @@ const Dashboard = () => {
     inventoryAccess.canRead,
     outboundAccess.canRead,
   ]);
-
+ 
   const fetchInboundStats = async () => {
     setLoading((prev) => ({ ...prev, inbound: true }));
     setError((prev) => ({ ...prev, inbound: null }));
-
+ 
     try {
       const response = await http.get(
         `/asns/stats?warehouse_id=${selectedWarehouse}`,
       );
-
+ 
       if (response.data.success) {
         const data = response.data.data;
         setInboundStats({
@@ -105,16 +105,16 @@ const Dashboard = () => {
       setLoading((prev) => ({ ...prev, inbound: false }));
     }
   };
-
+ 
   const fetchInventoryStats = async () => {
     setLoading((prev) => ({ ...prev, inventory: true }));
     setError((prev) => ({ ...prev, inventory: null }));
-
+ 
     try {
       const response = await http.get(
         `/inventory/summary?warehouse_id=${selectedWarehouse}`,
       );
-
+ 
       if (response.data.success) {
         const data = response.data.data;
         setInventoryStats({
@@ -141,16 +141,16 @@ const Dashboard = () => {
       setLoading((prev) => ({ ...prev, inventory: false }));
     }
   };
-
+ 
   const fetchOutboundStats = async () => {
     setLoading((prev) => ({ ...prev, outbound: true }));
     setError((prev) => ({ ...prev, outbound: null }));
-
+ 
     try {
       const response = await http.get(
         `/sales-orders/outbound-summary?warehouse_id=${selectedWarehouse}`,
       );
-
+ 
       if (response.data.success) {
         const data = response.data.data;
         setOutboundStats({
@@ -170,11 +170,11 @@ const Dashboard = () => {
       setLoading((prev) => ({ ...prev, outbound: false }));
     }
   };
-
+ 
   // Calculate ASN Completed (CLOSED + GRN_POSTED)
   const asnCompleted =
     parseInt(inboundStats.closed) + parseInt(inboundStats.grnPosted);
-
+ 
   // Show loading while checking permissions
   if (dashboardAccess.loading) {
     return (
@@ -183,7 +183,7 @@ const Dashboard = () => {
       </div>
     );
   }
-
+ 
   return (
     <div className="max-w-full">
       <PageHeader
@@ -200,12 +200,12 @@ const Dashboard = () => {
             {/* <button className="px-4 py-2 border rounded-md text-sm bg-white">
               Receive GRN
             </button> */}
-            <button
+            {/* <button
               onClick={() => navigate("/picking")}
               className="px-4 py-2 border rounded-md text-sm bg-white"
             >
               Start Picking Wave
-            </button>
+            </button> */}
             <button 
                           onClick={() => navigate("/outbound/saleOrderCreate/new")}
 
@@ -221,9 +221,9 @@ const Dashboard = () => {
           </>
         }
       />
-
+ 
       {/* <FilterBar filters={dashboardFilters} /> */}
-
+ 
       {/* INBOUND SECTION - Only show if user has read access */}
       {inboundAccess.canRead && (
         <>
@@ -231,7 +231,7 @@ const Dashboard = () => {
             title="Inbound Operations"
             icon={<Download size={16} className="text-blue-600" />}
           />
-
+ 
           {loading.inbound && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
@@ -256,7 +256,7 @@ const Dashboard = () => {
               />
             </div>
           )}
-
+ 
           {error.inbound && !loading.inbound && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="col-span-4 text-center text-red-500 py-4">
@@ -264,7 +264,7 @@ const Dashboard = () => {
               </div>
             </div>
           )}
-
+ 
           {!loading.inbound && !error.inbound && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <StatCard
@@ -291,7 +291,7 @@ const Dashboard = () => {
           )}
         </>
       )}
-
+ 
       {/* INVENTORY SECTION - Only show if user has read access */}
       {inventoryAccess.canRead && (
         <>
@@ -299,7 +299,7 @@ const Dashboard = () => {
             title="Inventory Status"
             icon={<Boxes size={16} className="text-orange-500" />}
           />
-
+ 
           {/* Show loading state for inventory */}
           {loading.inventory && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -325,7 +325,7 @@ const Dashboard = () => {
               />
             </div>
           )}
-
+ 
           {/* Show error state for inventory */}
           {error.inventory && !loading.inventory && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -334,7 +334,7 @@ const Dashboard = () => {
               </div>
             </div>
           )}
-
+ 
           {/* Show actual inventory data */}
           {!loading.inventory && !error.inventory && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -362,7 +362,7 @@ const Dashboard = () => {
           )}
         </>
       )}
-
+ 
       {/* OUTBOUND SECTION - Only show if user has read access */}
       {outboundAccess.canRead && (
         <>
@@ -370,7 +370,7 @@ const Dashboard = () => {
             title="Outbound Operations"
             icon={<Upload size={16} className="text-green-600" />}
           />
-
+ 
           {/* Show loading state for outbound */}
           {loading.outbound && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -396,7 +396,7 @@ const Dashboard = () => {
               />
             </div>
           )}
-
+ 
           {/* Show error state for outbound */}
           {error.outbound && !loading.outbound && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -405,7 +405,7 @@ const Dashboard = () => {
               </div>
             </div>
           )}
-
+ 
           {/* Show actual outbound data */}
           {!loading.outbound && !error.outbound && (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -433,11 +433,13 @@ const Dashboard = () => {
           )}
         </>
       )}
-
+ 
       <DashboardQueue warehouseId={selectedWarehouse} />
       {/* <DashboardWidgets /> */}
     </div>
   );
 };
-
+ 
 export default Dashboard;
+ 
+ 

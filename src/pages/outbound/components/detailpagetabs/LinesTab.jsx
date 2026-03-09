@@ -6,18 +6,18 @@ import { pillToneForLineStatus, Pill } from "../helpers";
 
 const LinesTab = ({ lines = [] }) => {
   const formattedRows = useMemo(() => {
-    return lines.map(line => {
+    return lines.map((line) => {
       const allocatedQty = parseFloat(line.allocated_qty || 0);
       const orderedQty = parseFloat(line.ordered_qty || 0);
       const pickedQty = parseFloat(line.picked_qty || 0);
       const packedQty = parseFloat(line.packed_qty || 0);
       const shippedQty = parseFloat(line.shipped_qty || 0);
-      
+
       let status = "Pending";
       if (allocatedQty === 0) status = "No Stock";
       else if (allocatedQty < orderedQty) status = "Partial";
       else if (allocatedQty === orderedQty) status = "Fully Allocated";
-      
+
       return {
         id: line.id,
         sku: line.sku?.sku_code || "—",
@@ -60,15 +60,15 @@ const LinesTab = ({ lines = [] }) => {
           <Pill text={r.status} tone={pillToneForLineStatus(r.status)} />
         ),
       },
-      {
-        key: "actions",
-        title: "Actions",
-        render: () => (
-          <button className="h-8 w-8 inline-flex items-center justify-center rounded-md bg-gray-100 text-gray-700">
-            <Layers size={16} />
-          </button>
-        ),
-      },
+      // {
+      //   key: "actions",
+      //   title: "Actions",
+      //   render: () => (
+      //     <button className="h-8 w-8 inline-flex items-center justify-center rounded-md bg-gray-100 text-gray-700">
+      //       <Layers size={16} />
+      //     </button>
+      //   ),
+      // },
     ],
     [],
   );

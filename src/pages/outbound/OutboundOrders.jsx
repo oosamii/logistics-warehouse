@@ -11,6 +11,7 @@ import { useSalesOrders } from "./components/useSalesOrders";
 import { getUserRole } from "../utils/authStorage";
 import { useAccess } from "../utils/useAccess";
 import { getOrderActionLabel } from "../inbound/components/helper";
+import http from "../../api/http";
 
 const OutboundOrders = () => {
   const navigate = useNavigate();
@@ -222,15 +223,35 @@ const OutboundOrders = () => {
     });
   };
 
-  const actionBystatus = (row) => {
+  // /pick-waves?order_id=22
+  const getWaveIdByOrderId = async (orderId) => {
+    try {
+      const res = await http.get(`/pick-waves/${orderId}`);
+      // console.log(res);
+      if (res.data) {
+        return res.data?.id;
+      }
+    } catch (error) {}
+  };
+
+  const actionBystatus = async (row) => {
     if (row?.status === "DRAFT") {
       navigate(`/outbound/saleOrderCreate/${row?.id}`);
     } else if (row?.status === "ALLOCATED") {
+      const waveId = await getWaveIdByOrderId(row?.id);
+      if (waveId) {
+        navigate(`/picking/waves/${waveId}`);
+      } else {
+        navigate(`/picking/createPickWavePage`);
+      }
+    } else if (row?.status === "PICKING") {
       navigate(`/picking/waves/${row?.id}`);
     } else if (row?.status === "PACKED") {
       navigate(`/shipping`);
+    } else if (row?.status === "PACKING") {
+      navigate(`/packing/orderId/${row?.id}`);
     } else {
-      navigate(`/orderDetails/${row?.id}`);
+      navigate(`/outbound/orderDetails/${row?.id}`);
     }
   };
 
@@ -265,7 +286,7 @@ const OutboundOrders = () => {
           <div>
             <button
               className="text-blue-600 hover:underline font-medium"
-              onClick={() => navigate(`/orderDetails/${row.id}`)}
+              onClick={() => navigate(`/outbound/orderDetails/${row.id}`)}
             >
               {row.order_no}
             </button>
@@ -380,7 +401,7 @@ const OutboundOrders = () => {
                 {actionLabel}
               </button>
               <button
-                onClick={() => navigate(`/orderDetails/${row.id}`)}
+                onClick={() => navigate(`/outbound/orderDetails/${row.id}`)}
                 className="px-2 py-1.5 rounded-md border bg-white"
               >
                 <MoreHorizontal size={16} />
@@ -400,12 +421,12 @@ const OutboundOrders = () => {
         subtitle="Create and manage outbound orders"
         actions={
           <>
-            <button className="px-4 py-2 border rounded-md text-sm bg-white">
+            {/* <button className="px-4 py-2 border rounded-md text-sm bg-white">
               Export
             </button>
             <button className="px-4 py-2 border rounded-md text-sm bg-white">
               Bulk Allocate
-            </button>
+            </button> */}
             {canCreate && (
               <button
                 onClick={() => navigate("/outbound/saleOrderCreate/new")}

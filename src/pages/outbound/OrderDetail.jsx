@@ -45,68 +45,88 @@ const OrderDetail = () => {
   };
 
   const getStatusTone = (status) => {
-    switch(status) {
-      case 'DRAFT': return 'gray';
-      case 'CONFIRMED': return 'blue';
-      case 'ALLOCATED': return 'green';
-      case 'PICKING': return 'orange';
-      case 'PICKED': return 'yellow';
-      case 'PACKING': return 'purple';
-      case 'PACKED': return 'purple';
-      case 'SHIPPED': return 'green';
-      case 'DELIVERED': return 'green';
-      case 'CANCELLED': return 'red';
-      default: return 'gray';
+    switch (status) {
+      case "DRAFT":
+        return "gray";
+      case "CONFIRMED":
+        return "blue";
+      case "ALLOCATED":
+        return "green";
+      case "PICKING":
+        return "orange";
+      case "PICKED":
+        return "yellow";
+      case "PACKING":
+        return "purple";
+      case "PACKED":
+        return "purple";
+      case "SHIPPED":
+        return "green";
+      case "DELIVERED":
+        return "green";
+      case "CANCELLED":
+        return "red";
+      default:
+        return "gray";
     }
   };
 
   const getStatusLabel = (status) => {
     const map = {
-      'DRAFT': 'Draft',
-      'CONFIRMED': 'Confirmed',
-      'ALLOCATED': 'Allocated',
-      'PICKING': 'Picking',
-      'PICKED': 'Picked',
-      'PACKING': 'Packing',
-      'PACKED': 'Packed',
-      'SHIPPED': 'Shipped',
-      'DELIVERED': 'Delivered',
-      'CANCELLED': 'Cancelled'
+      DRAFT: "Draft",
+      CONFIRMED: "Confirmed",
+      ALLOCATED: "Allocated",
+      PICKING: "Picking",
+      PICKED: "Picked",
+      PACKING: "Packing",
+      PACKED: "Packed",
+      SHIPPED: "Shipped",
+      DELIVERED: "Delivered",
+      CANCELLED: "Cancelled",
     };
     return map[status] || status;
   };
 
   const getPriorityTone = (priority) => {
-    switch(priority) {
-      case 'HIGH': return 'red';
-      case 'MEDIUM': return 'orange';
-      case 'NORMAL': return 'blue';
-      default: return 'gray';
+    switch (priority) {
+      case "HIGH":
+        return "red";
+      case "MEDIUM":
+        return "orange";
+      case "NORMAL":
+        return "blue";
+      default:
+        return "gray";
     }
   };
 
   // Format order data for summary bar
   const orderSummary = useMemo(() => {
     if (!order) return null;
-    
+
     return {
       orderNo: order.order_no,
       status: getStatusLabel(order.status),
       statusTone: getStatusTone(order.status),
       allocationBadge: `${order.allocation_status} Allocation`,
-      allocationTone: order.allocation_status === 'FULL' ? 'green' : 
-                     order.allocation_status === 'PARTIAL' ? 'orange' : 'red',
+      allocationTone:
+        order.allocation_status === "FULL"
+          ? "green"
+          : order.allocation_status === "PARTIAL"
+            ? "orange"
+            : "red",
       priorityBadge: `${order.priority} Priority`,
       priorityTone: getPriorityTone(order.priority),
       client: order.client?.client_name || order.customer_name,
       shipTo: `${order.ship_to_name}, ${order.ship_to_city}`,
-      slaDue: order.sla_due_date ? 
-              new Date(order.sla_due_date).toLocaleDateString('en-US', {
-                month: 'short',
-                day: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-              }) : "Not set",
+      slaDue: order.sla_due_date
+        ? new Date(order.sla_due_date).toLocaleDateString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          })
+        : "Not set",
       lines: order.total_lines || 0,
       units: parseFloat(order.total_ordered_units || 0).toFixed(0),
     };
@@ -115,16 +135,16 @@ const OrderDetail = () => {
   // Navigation items with counts
   const navItems = useMemo(() => {
     if (!order) return [];
-    
-    const allocationCount = order.lines?.filter(l => 
-      parseFloat(l.allocated_qty || 0) > 0
-    ).length || 0;
-    
+
+    const allocationCount =
+      order.lines?.filter((l) => parseFloat(l.allocated_qty || 0) > 0).length ||
+      0;
+
     const pickedCount = parseFloat(order.total_picked_units || 0) > 0 ? 1 : 0;
     const packedCount = parseFloat(order.total_packed_units || 0) > 0 ? 1 : 0;
     const shippingCount = order.tracking_number ? 1 : 0;
     const billingCount = order.invoice_no ? 1 : 0;
-    
+
     return [
       { key: "overview", label: "Overview", count: 0 },
       { key: "lines", label: "Lines", count: order.total_lines || 0 },
@@ -186,7 +206,7 @@ const OrderDetail = () => {
 
   const handleStartPicking = async () => {
     try {
-      const res = await http.post(`/sales-orders/${id}/start-picking`);
+      const res = await http.post(`/pick-tasks/${id}/start`);
       if (res.data?.success) {
         toast.success("Picking started");
         fetchOrderDetail();
@@ -209,33 +229,33 @@ const OrderDetail = () => {
 
       <PageHeader
         title={`Order ${order.order_no}`}
-        subtitle={`${order.client?.client_name || 'Client'} • ${order.order_date ? new Date(order.order_date).toLocaleDateString() : ''}`}
+        subtitle={`${order.client?.client_name || "Client"} • ${order.order_date ? new Date(order.order_date).toLocaleDateString() : ""}`}
         actions={
           <>
-            <button className="px-4 py-2 border rounded-md text-sm bg-white inline-flex items-center gap-2">
+            {/* <button className="px-4 py-2 border rounded-md text-sm bg-white inline-flex items-center gap-2">
               <Printer size={16} />
               Print
-            </button>
-            <button className="px-4 py-2 border rounded-md text-sm bg-white inline-flex items-center gap-2">
+            </button> */}
+            {/* <button className="px-4 py-2 border rounded-md text-sm bg-white inline-flex items-center gap-2">
               <Pencil size={16} />
               Edit Order
-            </button>
-            {order.status === 'CONFIRMED' && (
-              <button 
+            </button> */}
+            {/* {order.status === "CONFIRMED" && (
+              <button
                 onClick={handleAllocate}
                 className="px-4 py-2 rounded-md text-sm bg-blue-600 text-white"
               >
                 Allocate
               </button>
-            )}
-            {order.status === 'ALLOCATED' && (
-              <button 
+            )} */}
+            {/* {order.status === "ALLOCATED" && (
+              <button
                 onClick={handleStartPicking}
                 className="px-4 py-2 rounded-md text-sm bg-green-600 text-white"
               >
                 Start Picking
               </button>
-            )}
+            )} */}
           </>
         }
       />
@@ -261,12 +281,12 @@ const OrderDetail = () => {
               />
             )}
 
-            {activeTab === "lines" && (
-              <LinesTab lines={order.lines || []} />
-            )}
+            {activeTab === "lines" && <LinesTab lines={order.lines || []} />}
 
             {activeTab === "allocation" && (
-              <AllocationTab allocations={order.lines?.flatMap(l => l.allocations) || []} />
+              <AllocationTab
+                allocations={order.lines?.flatMap((l) => l.allocations) || []}
+              />
             )}
 
             {activeTab === "picking" && (

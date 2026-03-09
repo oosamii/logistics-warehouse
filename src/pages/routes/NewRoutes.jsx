@@ -95,8 +95,8 @@ const NewRoutes = [
 
   { path: "/outbound", element: protect("/outbound", <OutboundOrders />) },
   {
-    path: "/orderDetails/:id",
-    element: protect("/orderDetails/:id", <OrderDetail />),
+    path: "/outbound/orderDetails/:id",
+    element: protect("/outbound/orderDetails/:id", <OrderDetail />),
   },
   {
     path: "/outbound/saleOrderCreate/:id",
