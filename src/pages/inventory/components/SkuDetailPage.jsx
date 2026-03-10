@@ -28,7 +28,7 @@ export default function SkuDetailPage() {
   const [showHoldModal, setShowHoldModal] = useState(false);
   const [selectedInventory, setSelectedInventory] = useState(null);
 
-  const [holdQty, setHoldQty] = useState(1);
+  const [holdQty, setHoldQty] = useState("");
   const [holdReason, setHoldReason] = useState("QUALITY_CHECK");
   const [holdNotes, setHoldNotes] = useState("");
   const [actionLoading, setActionLoading] = useState(false);
@@ -115,7 +115,7 @@ export default function SkuDetailPage() {
 
   const openCreateHold = (row) => {
     setSelectedInventory(row);
-    setHoldQty(1);
+    setHoldQty("");
     setHoldReason("QUALITY_CHECK");
     setHoldNotes("");
     setShowHoldModal(true); // ✅ correct

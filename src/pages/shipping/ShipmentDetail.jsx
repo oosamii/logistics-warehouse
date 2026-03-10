@@ -29,10 +29,10 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
   useEffect(() => {
     const fetchShipmentDetails = async () => {
       if (!shipmentId) return;
-      
+
       setLoading(true);
       setError(null);
-      
+
       try {
         const response = await http.get(`/shipping/${shipmentId}`);
         if (response.data.success) {
@@ -54,18 +54,18 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
 
     // Format status for display
     const formatStatus = (status) => {
-      return status.charAt(0) + status.slice(1).toLowerCase().replace('_', ' ');
+      return status.charAt(0) + status.slice(1).toLowerCase().replace("_", " ");
     };
 
     // Format date for display
     const formatDate = (dateString) => {
       if (!dateString) return "N/A";
-      return new Date(dateString).toLocaleString('en-US', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-        hour: '2-digit',
-        minute: '2-digit'
+      return new Date(dateString).toLocaleString("en-US", {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+        hour: "2-digit",
+        minute: "2-digit",
       });
     };
 
@@ -80,7 +80,9 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
       carrierDetails: shipmentData.Carrier,
       service: shipmentData.shipping_method || "Standard",
       awb: shipmentData.awb_no || "N/A",
-      dispatchTime: formatDate(shipmentData.dispatched_at) || formatDate(shipmentData.createdAt),
+      dispatchTime:
+        formatDate(shipmentData.dispatched_at) ||
+        formatDate(shipmentData.createdAt),
       orders: 1, // Each shipment is linked to one sales order
       cartons: shipmentData.total_cartons || 0,
       exceptionsCount: 0, // You'll need to implement exceptions tracking
@@ -108,7 +110,7 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
   ];
 
   const ActiveComponent = sections.find(
-    (s) => s.id === activeSection
+    (s) => s.id === activeSection,
   )?.component;
 
   if (loading) {
@@ -142,7 +144,13 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
       <div className="mx-auto max-w-7xl px-6 py-6">
         {/* Breadcrumbs */}
         <div className="text-sm text-gray-500">
-          Shipping <span className="mx-2">›</span> Shipment Detail
+          <span
+            onClick={onBack}
+            className="hover:underline cursor-pointer hover:text-blue-600"
+          >
+            Shipping
+          </span>
+          <span className="mx-2">›</span> Shipment Detail
         </div>
 
         {/* Page Title + Actions */}
@@ -158,15 +166,15 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
               Back
             </button>
 
-            <button className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">
+            {/* <button className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-50">
               <FileText size={16} />
               Manifest
-            </button>
+            </button> */}
 
-            <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
+            {/* <button className="inline-flex items-center gap-2 rounded-lg bg-blue-600 px-4 py-2 text-sm font-medium text-white hover:bg-blue-700">
               <MapPin size={16} />
               Add Tracking Update
-            </button>
+            </button> */}
           </div>
         </div>
 
@@ -178,12 +186,17 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
                 <div className="text-2xl font-bold text-gray-900">
                   {shipmentDetails.id}
                 </div>
-                <span className={`rounded-full px-3 py-1 text-xs font-semibold ${
-                  shipmentDetails.rawStatus === 'DISPATCHED' ? 'bg-amber-100 text-amber-700' :
-                  shipmentDetails.rawStatus === 'CREATED' ? 'bg-gray-100 text-gray-700' :
-                  shipmentDetails.rawStatus === 'IN_TRANSIT' ? 'bg-blue-100 text-blue-700' :
-                  'bg-green-100 text-green-700'
-                }`}>
+                <span
+                  className={`rounded-full px-3 py-1 text-xs font-semibold ${
+                    shipmentDetails.rawStatus === "DISPATCHED"
+                      ? "bg-amber-100 text-amber-700"
+                      : shipmentDetails.rawStatus === "CREATED"
+                        ? "bg-gray-100 text-gray-700"
+                        : shipmentDetails.rawStatus === "IN_TRANSIT"
+                          ? "bg-blue-100 text-blue-700"
+                          : "bg-green-100 text-green-700"
+                  }`}
+                >
                   {shipmentDetails.status}
                 </span>
               </div>
@@ -207,25 +220,28 @@ const ShipmentDetail = ({ shipmentId, onBack }) => {
               <div className="mt-5">
                 <div className="text-sm text-gray-500">Content</div>
                 <div className="mt-1 font-semibold text-gray-900">
-                  {shipmentDetails.orders} Order / {shipmentDetails.cartons} Cartons
+                  {shipmentDetails.orders} Order / {shipmentDetails.cartons}{" "}
+                  Cartons
                 </div>
               </div>
 
               {shipmentDetails.notes && (
                 <div className="mt-3">
                   <div className="text-sm text-gray-500">Notes</div>
-                  <div className="mt-1 text-gray-900">{shipmentDetails.notes}</div>
+                  <div className="mt-1 text-gray-900">
+                    {shipmentDetails.notes}
+                  </div>
                 </div>
               )}
             </div>
 
             <div className="flex gap-3">
-              <button className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-100">
+              {/* <button className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-100">
                 Open Orders
               </button>
               <button className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-2 text-sm font-medium text-gray-800 hover:bg-gray-100">
                 Open Billing
-              </button>
+              </button> */}
             </div>
           </div>
         </div>

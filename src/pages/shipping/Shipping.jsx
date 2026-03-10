@@ -22,8 +22,8 @@ const Shipping = () => {
         label: "Shipments In Transit",
         component: ShipmentsInTransit,
       },
-      { id: "delivered", label: "Delivered", component: Delivered },
-      { id: "exceptions", label: "Exceptions", component: Exceptions },
+      // { id: "delivered", label: "Delivered", component: Delivered },
+      // { id: "exceptions", label: "Exceptions", component: Exceptions },
     ],
     [],
   );

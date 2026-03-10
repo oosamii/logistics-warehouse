@@ -4,8 +4,10 @@ import FilterBar from "../components/FilterBar";
 import CusTable from "../components/CusTable";
 import { Truck, Loader } from "lucide-react";
 import http from "../../api/http";
+import { useNavigate } from "react-router-dom";
 
 const PackingCompleted = ({ onOrderSelect }) => {
+  const navigate = useNavigate();
   const [filters, setFilters] = useState({
     date: "Today",
     warehouse: "",
@@ -261,7 +263,7 @@ const PackingCompleted = ({ onOrderSelect }) => {
       title: "Actions",
       render: (r) => (
         <button
-          onClick={() => onOrderSelect?.(r.id)}
+          onClick={() => navigate(`/shipping?tab=readyToShip`)}
           className="text-blue-600 text-sm font-medium hover:text-blue-800"
         >
           Open Shipping

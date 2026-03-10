@@ -2,7 +2,7 @@ import { useEffect, useState, useRef } from "react";
 import http from "@/api/http";
 import Pagination from "@/pages/components/Pagination";
 
-const AddOrderLineModal = ({ open, onClose, onSave, editLine }) => {
+const AddOrderLineModal = ({ open, onClose, onSave, editLine, clientId }) => {
   const [formData, setFormData] = useState({
     sku_id: editLine?.sku_id || "",
     sku: editLine?.sku || "",
@@ -33,6 +33,31 @@ const AddOrderLineModal = ({ open, onClose, onSave, editLine }) => {
   const wrapperRef = useRef(null);
   const debounceTimeout = useRef(null);
 
+  // const loadSkus = async (page = 1, query = "") => {
+  //   try {
+  //     setLoading(true);
+
+  //     const qs = new URLSearchParams();
+  //     qs.set("page", String(page));
+  //     qs.set("limit", "5");
+  //     if (query.trim()) qs.set("search", query.trim());
+
+  //     const res = await http.get(`/skus?${qs.toString()}`);
+  //     const list = res?.data?.data?.skus || [];
+  //     const pag = res?.data?.data?.pagination || {};
+
+  //     setSkus(list);
+  //     setPagination({
+  //       total: pag.total ?? 0,
+  //       page: pag.page ?? page,
+  //       pages: pag.pages ?? 1,
+  //       limit: pag.limit ?? 5,
+  //     });
+  //   } finally {
+  //     setLoading(false);
+  //   }
+  // };
+
   const loadSkus = async (page = 1, query = "") => {
     try {
       setLoading(true);
@@ -40,9 +65,14 @@ const AddOrderLineModal = ({ open, onClose, onSave, editLine }) => {
       const qs = new URLSearchParams();
       qs.set("page", String(page));
       qs.set("limit", "5");
+
       if (query.trim()) qs.set("search", query.trim());
 
+      // add this
+      if (clientId) qs.set("client_id", clientId);
+
       const res = await http.get(`/skus?${qs.toString()}`);
+
       const list = res?.data?.data?.skus || [];
       const pag = res?.data?.data?.pagination || {};
 
@@ -57,7 +87,6 @@ const AddOrderLineModal = ({ open, onClose, onSave, editLine }) => {
       setLoading(false);
     }
   };
-
   const handleSkuInputChange = (value) => {
     setFormData((prev) => ({ ...prev, sku: value }));
     setShowDropdown(true);
