@@ -51,11 +51,12 @@ const TextInput = ({
   </div>
 );
 
-const NumberInput = ({ value, onChange }) => (
+const NumberInput = ({ value, onChange, disabled }) => (
   <input
     type="number"
     value={value}
     onChange={(e) => onChange(Number(e.target.value))}
+    disabled={disabled}
     className="w-full rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
   />
 );
@@ -84,10 +85,11 @@ const ScanConfirmCard = ({
       <div className="mt-4">
         <InputLabel>Scan SKU Barcode</InputLabel>
         <TextInput
+          disabled
           value={scanSku}
           onChange={setScanSku}
           placeholder="Click to scan or enter SKU..."
-          rightIcon={<ScanLine size={18} />}
+          // rightIcon={<ScanLine size={18} />}
         />
       </div>
 
@@ -121,17 +123,17 @@ const ScanConfirmCard = ({
       <div className="mt-4 space-y-5">
         <div>
           <InputLabel>Putaway Good Qty</InputLabel>
-          <NumberInput value={goodQty} onChange={setGoodQty} />
+          <NumberInput disabled value={goodQty} onChange={setGoodQty} />
         </div>
 
         <div>
           <div className="flex items-center justify-between">
-            <InputLabel>Damaged / Hold Qty</InputLabel>
-            <button className="text-sm font-medium text-blue-600 hover:underline">
+            {/* <InputLabel>Damaged / Hold Qty</InputLabel> */}
+            {/* <button className="text-sm font-medium text-blue-600 hover:underline">
               + Add Note
-            </button>
+            </button> */}
           </div>
-          <NumberInput value={holdQty} onChange={setHoldQty} />
+          {/* <NumberInput value={holdQty} onChange={setHoldQty} /> */}
         </div>
       </div>
     </Card>

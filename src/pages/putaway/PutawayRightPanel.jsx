@@ -21,16 +21,17 @@ const DisabledBox = ({ children }) => (
   </div>
 );
 
-const InputWithScan = ({ value, onChange }) => (
+const InputWithScan = ({ value, onChange, DisabledBox }) => (
   <div className="relative">
     <input
       value={value}
+      disabled={DisabledBox}
       onChange={(e) => onChange(e.target.value)}
       className="w-full rounded-lg border border-blue-500 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-100"
     />
-    <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
+    {/* <div className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400">
       <ScanLine size={18} />
-    </div>
+    </div> */}
   </div>
 );
 
@@ -61,10 +62,10 @@ const PutawayRightPanel = ({ task }) => {
 
           <div>
             <Label>Location / Bin</Label>
-            <InputWithScan value={bin} onChange={setBin} />
+            <InputWithScan DisabledBox={true} value={bin} onChange={setBin} />
           </div>
 
-          <div className="pt-2">
+          <div className="pt-2 overflow-hidden">
             <div className="flex items-center justify-between text-sm">
               <div className="font-medium text-gray-900">
                 Bin Capacity ({task.suggestedBin})
