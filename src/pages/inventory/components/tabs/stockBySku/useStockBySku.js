@@ -4,21 +4,21 @@ import http from "@/api/http";
 import { toNum } from "../../inventoryFormatters";
 
 const STATUS_MAP = {
-  "Healthy": "HEALTHY",
+  Healthy: "HEALTHY",
   "Low Stock": "LOW_STOCK",
   "Expiry Risk": "EXPIRY_RISK",
   "QC Hold": "HOLD",
   "Out of Stock": "OUT_OF_STOCK",
-  "Damaged": "DAMAGED",
+  Damaged: "DAMAGED",
 };
 
 const REVERSE_STATUS_MAP = {
-  "HEALTHY": "Healthy",
-  "LOW_STOCK": "Low Stock",
-  "EXPIRY_RISK": "Expiry Risk",
-  "HOLD": "QC Hold",
-  "DAMAGED": "Damaged",
-  "OUT_OF_STOCK": "Out of Stock",
+  HEALTHY: "Healthy",
+  LOW_STOCK: "Low Stock",
+  EXPIRY_RISK: "Expiry Risk",
+  HOLD: "QC Hold",
+  DAMAGED: "Damaged",
+  OUT_OF_STOCK: "Out of Stock",
 };
 
 export function useStockBySku(toast) {
@@ -48,7 +48,7 @@ export function useStockBySku(toast) {
   });
 
   const [warehouses, setWarehouses] = useState([
-    { value: "All", label: "All Warehouses" }
+    { value: "All", label: "All Warehouses" },
   ]);
   const [clients, setClients] = useState(["All"]);
   const [statuses, setStatuses] = useState(["All"]);
@@ -81,11 +81,11 @@ export function useStockBySku(toast) {
         const options = [
           { value: "All", label: "All Warehouses" },
           ...list.map((w) => {
-          return {
+            return {
               value: String(w.id),
               label: `${w.warehouse_code} - ${w.warehouse_name}`,
             };
-        }),
+          }),
         ];
         setWarehouses(options);
       }
@@ -115,7 +115,7 @@ export function useStockBySku(toast) {
 
   const fetchStatusOptions = (skuItems) => {
     const uniqueStatuses = new Set(["All"]);
-    skuItems.forEach(item => {
+    skuItems.forEach((item) => {
       if (item.status) {
         const displayStatus = REVERSE_STATUS_MAP[item.status] || item.status;
         uniqueStatuses.add(displayStatus);
@@ -127,10 +127,10 @@ export function useStockBySku(toast) {
   const fetchSkuData = async () => {
     try {
       setLoading(true);
-      
+
       // Build query parameters for the group-by-sku endpoint
       const params = new URLSearchParams();
-      
+
       if (f.warehouse !== "All") {
         params.append("warehouse_id", f.warehouse);
       }
@@ -138,44 +138,45 @@ export function useStockBySku(toast) {
         params.append("client_id", f.client);
       }
       if (f.stockStatus !== "All") {
-        const statusValue = STATUS_MAP[f.stockStatus] || f.stockStatus.toUpperCase();
+        const statusValue =
+          STATUS_MAP[f.stockStatus] || f.stockStatus.toUpperCase();
         params.append("status", statusValue);
       }
       if (f.skuSearch) {
         params.append("search", f.skuSearch);
       }
-      
+
       // Pagination
       params.append("page", String(page));
       params.append("limit", String(pagination.limit));
-      
+
       // Use the group-by-sku endpoint
       const url = `/inventory/group-by-sku${params.toString() ? `?${params.toString()}` : ""}`;
       const res = await http.get(url);
-      
+
       if (res.data?.success) {
         const skuItems = res.data.data || [];
-        
+
         // Set the SKU data
         setSkuData(skuItems);
-        
+
         // Calculate summary from the data
         const calculatedSummary = calculateSummary(skuItems);
         setSummary(calculatedSummary);
-        
+
         // Update status options based on data
         fetchStatusOptions(skuItems);
-        
+
         // Update pagination
         if (res.data.pagination) {
           setPagination(res.data.pagination);
         } else {
           // Calculate client-side pagination
-          setPagination(prev => ({
+          setPagination((prev) => ({
             ...prev,
             page: page,
             total: skuItems.length,
-            pages: Math.ceil(skuItems.length / prev.limit)
+            pages: Math.ceil(skuItems.length / prev.limit),
           }));
         }
       } else {
@@ -183,9 +184,7 @@ export function useStockBySku(toast) {
       }
     } catch (e) {
       console.error("Error fetching SKU data:", e);
-      toast?.error?.(
-        e.response?.data?.message || "Failed to load SKU data"
-      );
+      toast?.error?.(e.response?.data?.message || "Failed to load SKU data");
       setSkuData([]);
       setSummary({
         total_on_hand: 0,
@@ -206,15 +205,15 @@ export function useStockBySku(toast) {
     let total_hold = 0;
     let total_allocated = 0;
     let total_damaged = 0;
-    
-    skuItems.forEach(item => {
+
+    skuItems.forEach((item) => {
       total_on_hand += toNum(item.total_on_hand);
       total_available += toNum(item.total_available);
       total_hold += toNum(item.total_hold);
       total_allocated += toNum(item.total_allocated);
       total_damaged += toNum(item.total_damaged);
     });
-    
+
     return {
       total_on_hand,
       total_available,
@@ -228,38 +227,41 @@ export function useStockBySku(toast) {
   // Apply filters to the SKU data
   const filteredSkuData = useMemo(() => {
     let filtered = [...skuData];
-    
+
     if (f.warehouse !== "All") {
       // Note: You might need to add warehouse_id to the group-by-sku response
       // For now, we'll skip this filter if warehouse_id is not in the response
-      filtered = filtered.filter(item => 
-        item.warehouse_id ? String(item.warehouse_id) === f.warehouse : true
+      filtered = filtered.filter((item) =>
+        item.warehouse_id ? String(item.warehouse_id) === f.warehouse : true,
       );
     }
-    
+
     if (f.client !== "All") {
       // Note: You might need to add client_id to the group-by-sku response
-      filtered = filtered.filter(item => 
-        item.client_id ? String(item.client_id) === f.client : true
+      filtered = filtered.filter((item) =>
+        item.client_id ? String(item.client_id) === f.client : true,
       );
     }
-    
+
     if (f.stockStatus !== "All") {
-      const statusValue = STATUS_MAP[f.stockStatus] || f.stockStatus.toUpperCase();
-      filtered = filtered.filter(item => 
-        item.status === statusValue || 
-        REVERSE_STATUS_MAP[item.status] === f.stockStatus
+      const statusValue =
+        STATUS_MAP[f.stockStatus] || f.stockStatus.toUpperCase();
+      filtered = filtered.filter(
+        (item) =>
+          item.status === statusValue ||
+          REVERSE_STATUS_MAP[item.status] === f.stockStatus,
       );
     }
-    
+
     if (f.skuSearch) {
       const searchLower = f.skuSearch.toLowerCase();
-      filtered = filtered.filter(item => 
-        item.sku?.sku_code?.toLowerCase().includes(searchLower) ||
-        item.sku?.sku_name?.toLowerCase().includes(searchLower)
+      filtered = filtered.filter(
+        (item) =>
+          item.sku?.sku_code?.toLowerCase().includes(searchLower) ||
+          item.sku?.sku_name?.toLowerCase().includes(searchLower),
       );
     }
-    
+
     return filtered;
   }, [skuData, f]);
 
@@ -269,10 +271,10 @@ export function useStockBySku(toast) {
     const start = (page - 1) * pagination.limit;
     const end = start + pagination.limit;
     const paginatedData = filteredSkuData.slice(start, end);
-    
-    return paginatedData.map((item) => {
+
+    return paginatedData.reverse().map((item) => {
       const displayStatus = REVERSE_STATUS_MAP[item.status] || item.status;
-      
+
       return {
         id: item.sku_id,
         sku: item.sku?.sku_code || "-",
@@ -285,12 +287,12 @@ export function useStockBySku(toast) {
         allocated: toNum(item.total_allocated).toLocaleString(),
         damaged: toNum(item.total_damaged).toLocaleString(),
         locations: "Multiple Locations",
-        batch: item.nearest_expiry ? 
-          new Date(item.nearest_expiry).toLocaleDateString() : 
-          "No Expiry",
+        batch: item.nearest_expiry
+          ? new Date(item.nearest_expiry).toLocaleDateString()
+          : "No Expiry",
         risk: displayStatus,
         img: `https://ui-avatars.com/api/?name=${encodeURIComponent(
-          item.sku?.sku_code || "SKU"
+          item.sku?.sku_code || "SKU",
         )}&background=random&color=fff`,
         raw: item,
       };
@@ -304,9 +306,9 @@ export function useStockBySku(toast) {
         type: "select",
         label: "Warehouse",
         value: f.warehouse,
-        options: warehouses.map(w => ({
+        options: warehouses.map((w) => ({
           value: w.value,
-          label: w.label
+          label: w.label,
         })),
         className: "w-[240px]",
       },
@@ -315,9 +317,9 @@ export function useStockBySku(toast) {
         type: "select",
         label: "Client",
         value: f.client,
-        options: clients.map(client => ({
-          value: client === "All" ? "All" : "1", 
-          label: client
+        options: clients.map((client) => ({
+          value: client === "All" ? "All" : "1",
+          label: client,
         })),
         className: "w-[180px]",
       },
@@ -326,9 +328,9 @@ export function useStockBySku(toast) {
         type: "select",
         label: "Stock Status",
         value: f.stockStatus,
-        options: statuses.map(status => ({
+        options: statuses.map((status) => ({
           value: status,
-          label: status === "All" ? "All Statuses" : status
+          label: status === "All" ? "All Statuses" : status,
         })),
         className: "w-[160px]",
       },
@@ -366,7 +368,7 @@ export function useStockBySku(toast) {
     pagination: {
       ...pagination,
       total: filteredSkuData.length,
-      pages: Math.ceil(filteredSkuData.length / pagination.limit)
+      pages: Math.ceil(filteredSkuData.length / pagination.limit),
     },
     page,
     setPage,
