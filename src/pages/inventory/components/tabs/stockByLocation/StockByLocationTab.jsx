@@ -58,7 +58,9 @@ export default function StockByLocationTab() {
         key: "total_available",
         title: "Available",
         render: (r) => (
-          <span className="font-medium text-green-600">{r.total_available}</span>
+          <span className="font-medium text-green-600">
+            {r.total_available}
+          </span>
         ),
       },
       {
@@ -87,19 +89,19 @@ export default function StockByLocationTab() {
         title: "SKUs",
         render: (r) => <span className="font-medium">{r.sku_count}</span>,
       },
-      {
-        key: "actions",
-        title: "Actions",
-        render: (r) => (
-          <div className="flex gap-2">
-            <button
-              className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
-            >
-              View Contents
-            </button>
-          </div>
-        ),
-      },
+      // {
+      //   key: "actions",
+      //   title: "Actions",
+      //   render: (r) => (
+      //     <div className="flex gap-2">
+      //       <button
+      //         className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1.5 text-sm text-gray-700 hover:bg-gray-100"
+      //       >
+      //         View Contents
+      //       </button>
+      //     </div>
+      //   ),
+      // },
     ],
     [navigate],
   );
@@ -108,17 +110,17 @@ export default function StockByLocationTab() {
     <div className="space-y-4">
       <SummaryCards
         cards={[
-          { 
-            label: "Total Zones", 
-            value: totals.zoneCount || tableData.length 
+          {
+            label: "Total Zones",
+            value: totals.zoneCount || tableData.length,
           },
-          { 
-            label: "Total SKUs", 
-            value: totals.skuCount 
+          {
+            label: "Total SKUs",
+            value: totals.skuCount,
           },
-          { 
-            label: "On Hand", 
-            value: totals.onHand 
+          {
+            label: "On Hand",
+            value: totals.onHand,
           },
           {
             label: "Available",
@@ -160,9 +162,7 @@ export default function StockByLocationTab() {
         </div>
       ) : tableData.length === 0 ? (
         <div className="flex justify-center items-center h-64 flex-col">
-          <div className="text-gray-500 mb-2 text-lg">
-            No zone data found
-          </div>
+          <div className="text-gray-500 mb-2 text-lg">No zone data found</div>
           <button
             onClick={refresh}
             className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 text-sm"
@@ -197,7 +197,8 @@ export default function StockByLocationTab() {
           </div>
 
           <div className="text-xs text-gray-400 text-center">
-            Aggregated by Zone. Click "View Details" to see SKU-level breakdown for each zone.
+            Aggregated by Zone. Click "View Details" to see SKU-level breakdown
+            for each zone.
           </div>
         </>
       )}

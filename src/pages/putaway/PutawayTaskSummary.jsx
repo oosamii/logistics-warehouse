@@ -1,5 +1,6 @@
 import React from "react";
 import { getStatusBadgeColor } from "../components/helper";
+import { useNavigate } from "react-router-dom";
 
 const StatusPill = ({ status }) => {
   const isPending = status === "Pending";
@@ -35,37 +36,42 @@ const LinkText = ({ children }) => (
 );
 
 const PutawayTaskSummary = ({ task, onSaveDraft, onBack }) => {
+  const navigate = useNavigate();
   return (
     <div className="border-b border-gray-200 bg-gray-50">
       <div className="mx-auto 2xl:max-w-[1900px] px-6 py-4">
         {/* Breadcrumb */}
-        <div className="mb-2 text-sm text-gray-500">
-          <span className="text-blue-600 hover:underline cursor-pointer">
-            Putaway
-          </span>{" "}
-          <span className="mx-2">›</span>
-          <span className="text-blue-600 hover:underline cursor-pointer">
+        <div className="flex flex-wrap items-center gap-3 justify-between mb-2 text-sm text-gray-500">
+          <div>
+            <span
+              onClick={() => navigate(`/putaway`)}
+              className="text-blue-600 hover:underline cursor-pointer"
+            >
+              Putaway
+            </span>{" "}
+            <span className="mx-2">›</span>
+            {/* <span  className="text-blue-600 hover:underline cursor-pointer">
             Task List
-          </span>{" "}
           <span className="mx-2">›</span>
-          <span className="text-gray-800">{task.taskId}</span>
-        </div>
-
-        {/* Title row */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <button
-              onClick={onSaveDraft}
-              className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
-            >
-              Save Draft
-            </button>
-            <button
-              onClick={onBack}
-              className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
-            >
-              Back
-            </button>
+          </span>{" "} */}
+            <span className="text-gray-800">{task.taskId}</span>
+          </div>
+          {/* Title row */}
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              {/* <button
+                onClick={onSaveDraft}
+                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
+              >
+                Save Draft
+              </button> */}
+              <button
+                onClick={onBack}
+                className="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-800 shadow-sm hover:bg-gray-50"
+              >
+                Back
+              </button>
+            </div>
           </div>
         </div>
 
