@@ -369,6 +369,7 @@ const InboundASN = () => {
       {
         key: "supplier",
         title: "Supplier",
+        
         render: (row) => row.supplier?.supplier_name || "-",
       },
       {
@@ -469,12 +470,12 @@ const InboundASN = () => {
         subtitle="Plan and track incoming shipments"
         actions={
           <>
-            <button
+            {/* <button
               onClick={() => toast.info("Export feature coming soon!")}
               className="px-4 py-2 border rounded-md text-sm bg-white w-full sm:w-auto"
             >
               Export
-            </button>
+            </button> */}
             {canCreate && (
               <button
                 onClick={() => navigate("/inbound/createASN/new")}
