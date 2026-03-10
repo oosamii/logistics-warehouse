@@ -166,20 +166,20 @@ export default function SkuDetailPage() {
         <span className="font-medium text-orange-600">{item.hold_qty}</span>
       ),
     },
-    // {
-    //   key: "allocated_qty",
-    //   title: "Allocated",
-    //   render: (item) => (
-    //     <span className="font-medium text-blue-600">{item.allocated_qty}</span>
-    //   ),
-    // },
-    // {
-    //   key: "damaged_qty",
-    //   title: "Damaged",
-    //   render: (item) => (
-    //     <span className="font-medium text-red-600">{item.damaged_qty}</span>
-    //   ),
-    // },
+    {
+      key: "allocated_qty",
+      title: "Allocated",
+      render: (item) => (
+        <span className="font-medium text-blue-600">{item.allocated_qty}</span>
+      ),
+    },
+    {
+      key: "damaged_qty",
+      title: "Damaged",
+      render: (item) => (
+        <span className="font-medium text-red-600">{item.damaged_qty}</span>
+      ),
+    },
     {
       key: "status",
       title: "Status",
