@@ -1,15 +1,18 @@
 import React, { useMemo, useState, useEffect, useCallback } from "react";
 import FilterBar from "../../components/FilterBar";
 import CusTable from "../../components/CusTable";
-import { Pencil, Trash2, RefreshCw, Package, Eye, Move } from "lucide-react";
+import Pagination from "../../components/Pagination";
+import { Pencil, Trash2, Package } from "lucide-react";
 import http from "../../../api/http";
 import toast from "react-hot-toast";
 
 const PalletTab = () => {
   const [pallets, setPallets] = useState([]);
   const [warehouses, setWarehouses] = useState([]);
+  const [docks, setDocks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [warehousesLoading, setWarehousesLoading] = useState(false);
+  const [docksLoading, setDocksLoading] = useState(false);
   const [error, setError] = useState(null);
   const [selectedPallet, setSelectedPallet] = useState(null);
   const [showModal, setShowModal] = useState(false);
@@ -17,11 +20,18 @@ const PalletTab = () => {
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [refreshing, setRefreshing] = useState(false);
 
+  // Pagination state - matching backend response
+  const [pagination, setPagination] = useState({
+    page: 1,
+    limit: 10,
+    total: 0,
+    totalPages: 0
+  });
+
   const [filtersState, setFiltersState] = useState({
     search: "",
     pallet_type: "All Types",
     status: "All Status",
-    is_mixed: "All",
     warehouse_id: "All Warehouses",
   });
 
@@ -41,16 +51,60 @@ const PalletTab = () => {
     }
   }, []);
 
-  // Fetch pallets
-  const fetchPallets = useCallback(async (showToast = false) => {
+  // Fetch docks
+  const fetchDocks = useCallback(async () => {
+    try {
+      setDocksLoading(true);
+      const response = await http.get("/docks/?showIsActive=true");
+      if (response.data.success) {
+        setDocks(response.data.data);
+      }
+    } catch (err) {
+      console.error("Error fetching docks:", err);
+      toast.error("Failed to load docks");
+    } finally {
+      setDocksLoading(false);
+    }
+  }, []);
+
+  // Fetch pallets with pagination
+  const fetchPallets = useCallback(async (page = 1, showToast = false) => {
     try {
       setLoading(true);
       if (showToast) setRefreshing(true);
       setError(null);
 
-      const response = await http.get("/pallets");
+      // Build query params
+      const params = new URLSearchParams({
+        page: page.toString(),
+        limit: pagination.limit.toString()
+      });
+
+      // Add filters if they're not "All" values
+      if (filtersState.search) {
+        params.append('search', filtersState.search);
+      }
+      if (filtersState.pallet_type !== "All Types") {
+        params.append('pallet_type', filtersState.pallet_type);
+      }
+      if (filtersState.status !== "All Status") {
+        params.append('status', filtersState.status);
+      }
+      if (filtersState.warehouse_id !== "All Warehouses" && filtersState.warehouse_id) {
+        params.append('warehouse_id', filtersState.warehouse_id);
+      }
+
+      const response = await http.get(`/pallets?${params.toString()}`);
+      
       if (response.data.success) {
         setPallets(response.data.data);
+        // Update pagination from backend response
+        setPagination({
+          page: response.data.pagination.page,
+          limit: response.data.pagination.limit,
+          total: response.data.pagination.total,
+          totalPages: response.data.pagination.totalPages
+        });
         if (showToast) {
           toast.success("Pallets refreshed successfully");
         }
@@ -66,14 +120,20 @@ const PalletTab = () => {
       setLoading(false);
       if (showToast) setRefreshing(false);
     }
-  }, []);
+  }, [pagination.limit, filtersState]);
 
   useEffect(() => {
-    fetchPallets();
+    fetchPallets(1);
     fetchWarehouses();
-  }, [fetchPallets, fetchWarehouses]);
+    fetchDocks();
+  }, []); // Empty dependency array - run once on mount
 
-  const palletTypes = ["STANDARD", "ECO", "PLASTIC", "WOODEN", "METAL"];
+  // Handle page change
+  const handlePageChange = (newPage) => {
+    fetchPallets(newPage);
+  };
+
+  const palletTypes = ["STANDARD", "EURO", "CUSTOM", "GAYLORD"];
   const palletStatuses = [
     "IN_STORAGE",
     "IN_TRANSIT",
@@ -83,14 +143,14 @@ const PalletTab = () => {
     "EMPTY",
   ];
 
-  // FIXED: Warehouse filter options
+  // Warehouse filter options
   const warehouseOptions = useMemo(() => {
     const baseOptions = ["All Warehouses"];
     const warehouseList = warehouses.map((wh) => `${wh.warehouse_name} (${wh.warehouse_code})`);
     return [...baseOptions, ...warehouseList];
   }, [warehouses]);
 
-  // FIXED: Get warehouse ID from display name
+  // Get warehouse ID from display name
   const getWarehouseIdFromName = (displayName) => {
     if (displayName === "All Warehouses") return null;
     const match = displayName.match(/\(([^)]+)\)/);
@@ -102,7 +162,7 @@ const PalletTab = () => {
     return null;
   };
 
-  // FIXED: Get display name from warehouse ID
+  // Get display name from warehouse ID
   const getWarehouseDisplayName = (warehouseId) => {
     if (warehouseId === "All Warehouses" || !warehouseId) return "All Warehouses";
     const warehouse = warehouses.find((wh) => wh.id === parseInt(warehouseId));
@@ -133,25 +193,17 @@ const PalletTab = () => {
       className: "w-[200px]",
     },
     {
-      key: "is_mixed",
-      label: "Mixed",
-      value: filtersState.is_mixed,
-      options: ["All", "Mixed", "Not Mixed"],
-      className: "w-[180px]",
-    },
-    {
       key: "warehouse_id",
       label: "Warehouse",
-      value: getWarehouseDisplayName(filtersState.warehouse_id), // FIXED: Convert ID to display name
-      options: warehouseOptions, // FIXED: Use simple string array
+      value: getWarehouseDisplayName(filtersState.warehouse_id),
+      options: warehouseOptions,
       className: "w-[250px]",
     },
   ];
 
-  // FIXED: Handle warehouse filter change
+  // Handle warehouse filter change
   const onFilterChange = (key, val) => {
     if (key === "warehouse_id") {
-      // Convert display name back to ID
       const warehouseId = val === "All Warehouses" ? "All Warehouses" : getWarehouseIdFromName(val);
       setFiltersState((p) => ({ ...p, [key]: warehouseId }));
     } else {
@@ -164,13 +216,14 @@ const PalletTab = () => {
       search: "",
       pallet_type: "All Types",
       status: "All Status",
-      is_mixed: "All",
       warehouse_id: "All Warehouses",
     });
+    fetchPallets(1);
     toast.success("Filters reset to default");
   };
 
   const onApply = () => {
+    fetchPallets(1);
     toast.success("Filters applied");
   };
 
@@ -186,14 +239,6 @@ const PalletTab = () => {
     setShowModal(true);
   };
 
-  const handleViewPallet = (pallet) => {
-    toast.success(`Viewing pallet ${pallet.pallet_id}`);
-  };
-
-  const handleMovePallet = (pallet) => {
-    toast.success(`Moving pallet ${pallet.pallet_id}`);
-  };
-
   const handleDeletePallet = async (pallet) => {
     if (!deleteConfirm || deleteConfirm.id !== pallet.id) {
       setDeleteConfirm({
@@ -206,7 +251,8 @@ const PalletTab = () => {
     const deletePromise = new Promise(async (resolve, reject) => {
       try {
         await http.delete(`/pallets/${pallet.id}`);
-        setPallets((prev) => prev.filter((p) => p.id !== pallet.id));
+        // Refresh the current page after delete
+        fetchPallets(pagination.page);
         setDeleteConfirm(null);
         resolve();
       } catch (err) {
@@ -225,56 +271,16 @@ const PalletTab = () => {
   };
 
   const handleRefresh = () => {
-    fetchPallets(true);
+    fetchPallets(pagination.page, true);
   };
 
   const handleModalClose = (refresh = false) => {
     setShowModal(false);
     setSelectedPallet(null);
     if (refresh) {
-      fetchPallets(true);
+      fetchPallets(pagination.page);
     }
   };
-
-  const filteredRows = useMemo(() => {
-    const q = (filtersState.search || "").toLowerCase().trim();
-
-    return pallets.filter((pallet) => {
-      const matchesSearch =
-        !q ||
-        `${pallet.pallet_id} ${pallet.warehouse?.warehouse_name || ""}`
-          .toLowerCase()
-          .includes(q);
-
-      const matchesType =
-        filtersState.pallet_type === "All Types" ||
-        pallet.pallet_type === filtersState.pallet_type;
-
-      const matchesStatus =
-        filtersState.status === "All Status" ||
-        pallet.status === filtersState.status;
-
-      let matchesMixed = true;
-      if (filtersState.is_mixed === "Mixed") {
-        matchesMixed = pallet.is_mixed === true;
-      } else if (filtersState.is_mixed === "Not Mixed") {
-        matchesMixed = pallet.is_mixed === false;
-      }
-
-      // FIXED: Warehouse filter logic
-      const matchesWarehouse =
-        filtersState.warehouse_id === "All Warehouses" ||
-        pallet.warehouse_id?.toString() === filtersState.warehouse_id?.toString();
-
-      return (
-        matchesSearch &&
-        matchesType &&
-        matchesStatus &&
-        matchesMixed &&
-        matchesWarehouse
-      );
-    });
-  }, [pallets, filtersState]);
 
   const getStatusColor = (status) => {
     const statusColors = {
@@ -291,15 +297,18 @@ const PalletTab = () => {
   const getPalletTypeColor = (type) => {
     const typeColors = {
       STANDARD: "bg-blue-100 text-blue-700",
-      ECO: "bg-green-100 text-green-700",
-      PLASTIC: "bg-purple-100 text-purple-700",
-      WOODEN: "bg-amber-100 text-amber-700",
-      METAL: "bg-gray-100 text-gray-700",
+      EURO: "bg-green-100 text-green-700",
+      CUSTOM: "bg-purple-100 text-purple-700",
+      GAYLORD: "bg-amber-100 text-amber-700",
     };
     return typeColors[type] || "bg-gray-100 text-gray-700";
   };
 
   const getLocationDisplay = (pallet) => {
+    if (pallet.dock_id) {
+      const dock = docks.find(d => d.id === pallet.dock_id);
+      return dock ? `${dock.dock_name} (${dock.dock_code})` : "Not Assigned";
+    }
     return pallet.current_location || "Not Assigned";
   };
 
@@ -362,17 +371,6 @@ const PalletTab = () => {
         ),
       },
       {
-        key: "is_mixed",
-        title: "Mixed",
-        render: (row) => (
-          <span
-            className={`inline-flex items-center rounded-full px-3 py-1 text-xs font-medium ${row.is_mixed ? "bg-purple-100 text-purple-700" : "bg-gray-100 text-gray-700"}`}
-          >
-            {row.is_mixed ? "Yes" : "No"}
-          </span>
-        ),
-      },
-      {
         key: "updated_at",
         title: "Last Updated",
         render: (row) => (
@@ -416,52 +414,75 @@ const PalletTab = () => {
         ),
       },
     ],
-    [deleteConfirm, warehouses],
+    [deleteConfirm, warehouses, docks],
   );
 
-  // Add/Edit Pallet Modal (keep this part the same as before)
+  // Add/Edit Pallet Modal
   const PalletModal = () => {
-    const [formData, setFormData] = useState({
-      pallet_id: "",
+    // For create mode
+    const [createFormData, setCreateFormData] = useState({
       pallet_type: "STANDARD",
       warehouse_id: warehouses.length > 0 ? warehouses[0].id : "",
-      current_location: "",
-      status: "EMPTY",
-      is_mixed: false,
+      dock_id: "",
     });
+
+    // For edit mode - only dock_id and status
+    const [editFormData, setEditFormData] = useState({
+      dock_id: "",
+    });
+    const [editStatus, setEditStatus] = useState("EMPTY");
 
     const [modalLoading, setModalLoading] = useState(false);
     const [modalError, setModalError] = useState("");
 
+    // Filter docks based on selected warehouse for create mode
+    const filteredDocksForCreate = useMemo(() => {
+      if (!createFormData.warehouse_id) return docks;
+      return docks.filter(dock => dock.warehouse_id === parseInt(createFormData.warehouse_id));
+    }, [docks, createFormData.warehouse_id]);
+
+    // Filter docks based on selected pallet's warehouse for edit mode
+    const filteredDocksForEdit = useMemo(() => {
+      if (!selectedPallet?.warehouse_id) return docks;
+      return docks.filter(dock => dock.warehouse_id === parseInt(selectedPallet.warehouse_id));
+    }, [docks, selectedPallet]);
+
     useEffect(() => {
       if (selectedPallet && isEditing) {
-        setFormData({
-          pallet_id: selectedPallet.pallet_id,
-          pallet_type: selectedPallet.pallet_type,
-          warehouse_id: selectedPallet.warehouse_id,
-          current_location: selectedPallet.current_location || "",
-          status: selectedPallet.status,
-          is_mixed: selectedPallet.is_mixed,
+        // Edit mode - only set dock_id and status
+        setEditFormData({
+          dock_id: selectedPallet.dock_id || "",
         });
+        setEditStatus(selectedPallet.status);
       } else if (warehouses.length > 0) {
-        setFormData({
-          pallet_id: "",
+        // Create mode - reset form
+        setCreateFormData({
           pallet_type: "STANDARD",
           warehouse_id: warehouses[0].id,
-          current_location: "",
-          status: "EMPTY",
-          is_mixed: false,
+          dock_id: "",
         });
       }
       setModalError("");
     }, [selectedPallet, isEditing, warehouses]);
 
-    const handleChange = (e) => {
-      const { name, value, type, checked } = e.target;
-      setFormData((prev) => ({
+    const handleCreateChange = (e) => {
+      const { name, value } = e.target;
+      setCreateFormData((prev) => ({
         ...prev,
-        [name]: type === "checkbox" ? checked : value,
+        [name]: value,
       }));
+    };
+
+    const handleEditChange = (e) => {
+      const { name, value } = e.target;
+      setEditFormData((prev) => ({
+        ...prev,
+        [name]: value,
+      }));
+    };
+
+    const handleStatusChange = (e) => {
+      setEditStatus(e.target.value);
     };
 
     const handleSubmit = async (e) => {
@@ -473,17 +494,25 @@ const PalletTab = () => {
         let response;
 
         if (isEditing && selectedPallet) {
+          // Update pallet - ONLY dock_id and status can be updated
           const payload = {
-            current_location: formData.current_location,
-            status: formData.status,
+            dock_id: editFormData.dock_id ? parseInt(editFormData.dock_id) : null,
+            status: editStatus,
           };
           response = await http.put(`/pallets/${selectedPallet.id}`, payload);
         } else {
+          // Create pallet - NO pallet_id field, NO status field
+          // Only pallet_type, warehouse_id, and optional dock_id
           const payload = {
-            ...formData,
-            warehouse_id: parseInt(formData.warehouse_id),
-            current_location: formData.current_location || null,
+            pallet_type: createFormData.pallet_type,
+            warehouse_id: parseInt(createFormData.warehouse_id),
           };
+          
+          // Only add dock_id if it's selected
+          if (createFormData.dock_id) {
+            payload.dock_id = parseInt(createFormData.dock_id);
+          }
+          
           response = await http.post("/pallets", payload);
         }
 
@@ -536,37 +565,97 @@ const PalletTab = () => {
                 </div>
               )}
 
-              <div className="grid grid-cols-2 gap-4">
-                {!isEditing && (
-                  <div>
-                    <label className="mb-1 block text-sm font-medium text-gray-700">
-                      Pallet ID *
-                    </label>
-                    <input
-                      type="text"
-                      name="pallet_id"
-                      value={formData.pallet_id}
-                      onChange={handleChange}
-                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                      placeholder="e.g., P-00006"
-                      required
-                      disabled={isEditing}
-                    />
+              {isEditing ? (
+                // EDIT MODE - Only dock location and status are editable
+                <div className="space-y-6">
+                  {/* Pallet Information - Read Only */}
+                  <div className="rounded-lg bg-gray-50 p-4">
+                    <h3 className="mb-3 text-sm font-semibold text-gray-700">Pallet Information</h3>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-600">
+                          Pallet ID
+                        </label>
+                        <p className="text-sm font-medium text-gray-900">{selectedPallet?.pallet_id}</p>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-600">
+                          Pallet Type
+                        </label>
+                        <p className="text-sm font-medium text-gray-900">{selectedPallet?.pallet_type}</p>
+                      </div>
+                      <div>
+                        <label className="mb-1 block text-sm font-medium text-gray-600">
+                          Warehouse
+                        </label>
+                        <p className="text-sm font-medium text-gray-900">
+                          {warehouses.find(w => w.id === selectedPallet?.warehouse_id)?.warehouse_name || "Unknown"}
+                        </p>
+                      </div>
+                    </div>
                   </div>
-                )}
 
-                {!isEditing && (
+                  {/* Editable Fields */}
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                        Dock Location
+                      </label>
+                      <select
+                        name="dock_id"
+                        value={editFormData.dock_id}
+                        onChange={handleEditChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                        disabled={docksLoading}
+                      >
+                        <option value="">Select Dock </option>
+                        {filteredDocksForEdit.map((dock) => (
+                          <option key={dock.id} value={dock.id}>
+                            {dock.dock_name} ({dock.dock_code}) - {dock.dock_type}
+                          </option>
+                        ))}
+                      </select>
+                      {docksLoading && (
+                        <p className="mt-1 text-xs text-gray-500">
+                          Loading docks...
+                        </p>
+                      )}
+                    </div>
+
+                    <div>
+                      <label className="mb-1 block text-sm font-medium text-gray-700">
+                        Status *
+                      </label>
+                      <select
+                        value={editStatus}
+                        onChange={handleStatusChange}
+                        className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                        required
+                      >
+                        {palletStatuses.map((status) => (
+                          <option key={status} value={status}>
+                            {status.replace("_", " ")}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+
+                
+                </div>
+              ) : (
+                // CREATE MODE - All fields editable except status and pallet_id
+                <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-700">
                       Pallet Type *
                     </label>
                     <select
                       name="pallet_type"
-                      value={formData.pallet_type}
-                      onChange={handleChange}
+                      value={createFormData.pallet_type}
+                      onChange={handleCreateChange}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                       required
-                      disabled={isEditing}
                     >
                       {palletTypes.map((type) => (
                         <option key={type} value={type}>
@@ -575,20 +664,18 @@ const PalletTab = () => {
                       ))}
                     </select>
                   </div>
-                )}
 
-                {!isEditing && (
                   <div>
                     <label className="mb-1 block text-sm font-medium text-gray-700">
                       Warehouse *
                     </label>
                     <select
                       name="warehouse_id"
-                      value={formData.warehouse_id}
-                      onChange={handleChange}
+                      value={createFormData.warehouse_id}
+                      onChange={handleCreateChange}
                       className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
                       required
-                      disabled={isEditing || warehousesLoading}
+                      disabled={warehousesLoading}
                     >
                       {warehouses.map((wh) => (
                         <option key={wh.id} value={wh.id}>
@@ -602,110 +689,33 @@ const PalletTab = () => {
                       </p>
                     )}
                   </div>
-                )}
 
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Status *
-                  </label>
-                  <select
-                    name="status"
-                    value={formData.status}
-                    onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                    required
-                  >
-                    {palletStatuses.map((status) => (
-                      <option key={status} value={status}>
-                        {status.replace("_", " ")}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-
-                <div>
-                  <label className="mb-1 block text-sm font-medium text-gray-700">
-                    Current Location
-                  </label>
-                  <input
-                    type="text"
-                    name="current_location"
-                    value={formData.current_location}
-                    onChange={handleChange}
-                    className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
-                    placeholder="e.g., ZONE-A-RACK-01"
-                  />
-                </div>
-
-                {!isEditing && (
-                  <div className="col-span-2 flex items-center pt-2">
-                    <input
-                      type="checkbox"
-                      id="is_mixed"
-                      name="is_mixed"
-                      checked={formData.is_mixed}
-                      onChange={handleChange}
-                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500"
-                      disabled={isEditing}
-                    />
-                    <label
-                      htmlFor="is_mixed"
-                      className="ml-2 text-sm text-gray-700"
-                    >
-                      Mixed Pallet (Contains multiple SKUs)
+                  <div className="col-span-2">
+                    <label className="mb-1 block text-sm font-medium text-gray-700">
+                      Dock Location (Optional)
                     </label>
-                  </div>
-                )}
-              </div>
-
-              <div className="mt-6 rounded-lg bg-gray-50 p-4">
-                <h3 className="mb-2 text-sm font-semibold text-gray-700">
-                  Quick Actions
-                </h3>
-                <div className="flex flex-wrap gap-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, status: "IN_STORAGE" }))
-                    }
-                    className="rounded-md bg-green-100 px-3 py-1 text-xs font-medium text-green-700 hover:bg-green-200"
-                  >
-                    Mark as In Storage
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, status: "AVAILABLE" }))
-                    }
-                    className="rounded-md bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700 hover:bg-gray-200"
-                  >
-                    Mark as Available
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setFormData((prev) => ({ ...prev, status: "EMPTY" }))
-                    }
-                    className="rounded-md bg-blue-100 px-3 py-1 text-xs font-medium text-blue-700 hover:bg-blue-200"
-                  >
-                    Mark as Empty
-                  </button>
-                  {!isEditing && (
-                    <button
-                      type="button"
-                      onClick={() =>
-                        setFormData((prev) => ({
-                          ...prev,
-                          is_mixed: !prev.is_mixed,
-                        }))
-                      }
-                      className="rounded-md bg-purple-100 px-3 py-1 text-xs font-medium text-purple-700 hover:bg-purple-200"
+                    <select
+                      name="dock_id"
+                      value={createFormData.dock_id}
+                      onChange={handleCreateChange}
+                      className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm focus:border-blue-500 focus:outline-none"
+                      disabled={docksLoading || !createFormData.warehouse_id}
                     >
-                      Toggle Mixed
-                    </button>
-                  )}
+                      <option value="">Select Dock</option>
+                      {filteredDocksForCreate.map((dock) => (
+                        <option key={dock.id} value={dock.id}>
+                          {dock.dock_name} ({dock.dock_code}) - {dock.dock_type}
+                        </option>
+                      ))}
+                    </select>
+                    {docksLoading && (
+                      <p className="mt-1 text-xs text-gray-500">
+                        Loading docks...
+                      </p>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
 
             <div className="border-t border-gray-200 px-6 py-4">
@@ -733,8 +743,41 @@ const PalletTab = () => {
     );
   };
 
-  // Rest of your component remains the same...
-  // ... (keep the same loading, error, and return JSX)
+  // Convert pagination for the Pagination component (which expects 'pages')
+  const paginationForComponent = {
+    page: pagination.page,
+    pages: pagination.totalPages,
+    total: pagination.total,
+    limit: pagination.limit
+  };
+
+  if (loading && !refreshing && pallets.length === 0) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-center">
+          <Package className="mx-auto h-12 w-12 animate-pulse text-gray-400" />
+          <p className="mt-2 text-sm text-gray-500">Loading pallets...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error && pallets.length === 0) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <div className="text-center">
+          <Package className="mx-auto h-12 w-12 text-red-400" />
+          <p className="mt-2 text-sm text-red-600">{error}</p>
+          <button
+            onClick={handleRefresh}
+            className="mt-4 rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          >
+            Try Again
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -748,15 +791,22 @@ const PalletTab = () => {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2">
-            <button
-              type="button"
-              onClick={handleAddPallet}
-              className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
-            >
-              <Package className="h-4 w-4" />+ Add Pallet
-            </button>
-          </div>
+          <button
+            type="button"
+            onClick={handleRefresh}
+            disabled={refreshing}
+            className="flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+          >
+            <Package className="h-4 w-4" />
+            {refreshing ? "Refreshing..." : "Refresh"}
+          </button>
+          <button
+            type="button"
+            onClick={handleAddPallet}
+            className="flex items-center gap-2 rounded-md bg-blue-600 px-4 py-2 text-sm text-white hover:bg-blue-700"
+          >
+            <Package className="h-4 w-4" />+ Add Pallet
+          </button>
         </div>
       </div>
 
@@ -768,8 +818,16 @@ const PalletTab = () => {
       />
 
       <div className="mt-4 rounded-lg border border-gray-200 bg-white">
-        {filteredRows.length > 0 ? (
-          <CusTable columns={columns} data={filteredRows} />
+        {pallets.length > 0 ? (
+          <>
+            <CusTable columns={columns} data={pallets} />
+            {pagination.totalPages > 1 && (
+              <Pagination 
+                pagination={paginationForComponent} 
+                onPageChange={handlePageChange} 
+              />
+            )}
+          </>
         ) : (
           <div className="py-12 text-center">
             <Package className="mx-auto h-12 w-12 text-gray-400" />
@@ -785,7 +843,7 @@ const PalletTab = () => {
                 onClick={handleAddPallet}
                 className="rounded-md bg-blue-600 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-700"
               >
-                <Package className="-ml-0.5 mr-1.5 h-4 w-4 inline" />
+                <Package className="-ml-0.5 mr-1.5 inline h-4 w-4" />
                 Add New Pallet
               </button>
             </div>
