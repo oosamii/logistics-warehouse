@@ -148,15 +148,22 @@ export default function SkuDetailPage() {
       ),
     },
     {
+      key: "available_qty",
+      title: "Available",
+      render: (item) => (
+        <span className="font-medium text-green-600">{item.available_qty}</span>
+      ),
+    },
+    {
       key: "on_hand_qty",
       title: "On Hand",
       render: (item) => <span className="font-medium">{item.on_hand_qty}</span>,
     },
     {
-      key: "available_qty",
-      title: "Available",
+      key: "allocated_qty",
+      title: "Allocated",
       render: (item) => (
-        <span className="font-medium text-green-600">{item.available_qty}</span>
+        <span className="font-medium text-blue-600">{item.allocated_qty}</span>
       ),
     },
     {
