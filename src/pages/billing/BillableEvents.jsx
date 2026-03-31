@@ -47,7 +47,7 @@ const BillableEvents = () => {
   });
 
   const getRangeFromPeriod = (period) => {
-    const now = new Date();
+    const now = new Date() + 24 * 60 * 60 * 1000;
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
