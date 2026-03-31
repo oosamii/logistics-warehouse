@@ -97,10 +97,52 @@ const ReadyToInvoice = () => {
     loadWarehouses();
   }, []);
 
+  const getRangeFromPeriod = (period) => {
+    const now = new Date();
+
+    const toYMD = (d) => d.toISOString().slice(0, 10);
+    const addOneDay = (d) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+
+    if (period === "This Month") {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      return {
+        date_from: toYMD(start),
+        date_to: toYMD(addOneDay(now)),
+      };
+    }
+
+    if (period === "Last Month") {
+      const start = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+      const end = new Date(now.getFullYear(), now.getMonth(), 0);
+      return {
+        date_from: toYMD(start),
+        date_to: toYMD(addOneDay(end)),
+      };
+    }
+
+    if (period === "This Quarter") {
+      const q = Math.floor(now.getMonth() / 3);
+      const start = new Date(now.getFullYear(), q * 3, 1);
+      return {
+        date_from: toYMD(start),
+        date_to: toYMD(addOneDay(now)),
+      };
+    }
+
+    return { date_from: "", date_to: "" };
+  };
+
   const buildQs = () => {
     const qs = new URLSearchParams();
+
     if (filters.warehouse_id) qs.set("warehouse_id", filters.warehouse_id);
     if (filters.client_id) qs.set("client_id", filters.client_id);
+
+    const range = getRangeFromPeriod(filters.period);
+    if (range.date_from) qs.set("date_from", range.date_from);
+    if (range.date_to) qs.set("date_to", range.date_to);
+
     return qs.toString();
   };
 

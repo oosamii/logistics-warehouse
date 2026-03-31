@@ -7,6 +7,7 @@ import { Field, Modal } from "./helper";
 import { toast } from "react-hot-toast";
 import { useAccess } from "../../utils/useAccess";
 import { getUserRole } from "../../utils/authStorage";
+import { PERMISSION_ACTIONS } from "../../routes/routePerms";
 
 const emptyPermission = {
   name: "",
@@ -298,7 +299,7 @@ const PermissionsTab = () => {
               }}
             />
 
-            <Field
+            {/* <Field
               label="Code"
               required
               value={form.code}
@@ -308,7 +309,34 @@ const PermissionsTab = () => {
                 setForm((p) => ({ ...p, code: next }));
                 setFormErrors((e) => ({ ...e, code: "" }));
               }}
-            />
+            /> */}
+
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Code *
+              </label>
+
+              <select
+                value={form.code}
+                onChange={(e) => {
+                  setForm((p) => ({ ...p, code: e.target.value }));
+                  setFormErrors((err) => ({ ...err, code: "" }));
+                }}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">Select Permission</option>
+
+                {PERMISSION_ACTIONS.map((p) => (
+                  <option key={p} value={p}>
+                    {p}
+                  </option>
+                ))}
+              </select>
+
+              {formErrors.code && (
+                <p className="mt-1 text-xs text-red-500">{formErrors.code}</p>
+              )}
+            </div>
 
             <div className="md:col-span-2">
               <Field

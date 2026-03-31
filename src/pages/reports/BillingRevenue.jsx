@@ -12,11 +12,11 @@ import http from "../../api/http";
 
 // Date range options mapping
 const DATE_RANGES = {
-  "All": { days: null },
-  "Today": { days: 0 },
+  All: { days: null },
+  Today: { days: 0 },
   "This Week": { days: 7 },
   "This Month": { days: 30 },
-  "Last Month": { days: 30, offset: 30 }
+  "Last Month": { days: 30, offset: 30 },
 };
 
 const NumPill = ({ value, tone = "green" }) => {
@@ -41,10 +41,10 @@ const NumPill = ({ value, tone = "green" }) => {
 // Format currency
 const formatCurrency = (value) => {
   if (!value && value !== 0) return "₹0";
-  const num = typeof value === 'string' ? parseFloat(value) : value;
-  return new Intl.NumberFormat('en-IN', {
-    style: 'currency',
-    currency: 'INR',
+  const num = typeof value === "string" ? parseFloat(value) : value;
+  return new Intl.NumberFormat("en-IN", {
+    style: "currency",
+    currency: "INR",
     minimumFractionDigits: 0,
     maximumFractionDigits: 0,
   }).format(num);
@@ -53,12 +53,16 @@ const formatCurrency = (value) => {
 export default function BillingRevenue() {
   const [loading, setLoading] = useState(false);
   const [reportData, setReportData] = useState(null);
-  
+
   // Pagination states for client dropdown
   const [clientPage, setClientPage] = useState(1);
   const [clients, setClients] = useState([]);
-  const [clientPagination, setClientPagination] = useState({ page: 1, pages: 1, total: 0 });
-  
+  const [clientPagination, setClientPagination] = useState({
+    page: 1,
+    pages: 1,
+    total: 0,
+  });
+
   // Filter states - default to "all"
   const [dateRange, setDateRange] = useState("All");
   const [client, setClient] = useState("all");
@@ -69,11 +73,17 @@ export default function BillingRevenue() {
   const fetchClients = useCallback(async (page = 1) => {
     try {
       const response = await http.get("/clients", {
-        params: { page, limit: 10 }
+        params: { page, limit: 10 },
       });
       if (response.data.success) {
         setClients(response.data.data.clients);
-        setClientPagination(response.data.data.pagination || { page: 1, pages: 1, total: response.data.data.clients.length });
+        setClientPagination(
+          response.data.data.pagination || {
+            page: 1,
+            pages: 1,
+            total: response.data.data.clients.length,
+          },
+        );
       }
     } catch (error) {
       console.error("Error fetching clients:", error);
@@ -95,23 +105,29 @@ export default function BillingRevenue() {
         from = null;
         to = null;
         break;
+
       case "Today":
         from = format(today, "yyyy-MM-dd");
-        to = format(today, "yyyy-MM-dd");
+        to = format(addDays(today, 1), "yyyy-MM-dd");
         break;
+
       case "This Week":
         from = format(subDays(today, 7), "yyyy-MM-dd");
-        to = format(today, "yyyy-MM-dd");
+        to = format(addDays(today, 1), "yyyy-MM-dd");
         break;
+
       case "This Month":
         from = format(startOfMonth(today), "yyyy-MM-dd");
-        to = format(endOfMonth(today), "yyyy-MM-dd");
+        to = format(addDays(today, 1), "yyyy-MM-dd");
         break;
-      case "Last Month":
+
+      case "Last Month": {
         const lastMonth = subDays(startOfMonth(today), 1);
         from = format(startOfMonth(lastMonth), "yyyy-MM-dd");
-        to = format(endOfMonth(lastMonth), "yyyy-MM-dd");
+        to = format(addDays(endOfMonth(lastMonth), 1), "yyyy-MM-dd");
         break;
+      }
+
       default:
         from = null;
         to = null;
@@ -125,25 +141,25 @@ export default function BillingRevenue() {
     setLoading(true);
     try {
       const { from, to } = getDateRange();
-      
+
       // Build params object
       const params = {};
-      
+
       // Add client_id only if not "all"
       if (client !== "all") {
         params.client_id = client;
       }
-      
+
       // Only add date params if they exist
       if (from && to) {
         params.date_from = from;
         params.date_to = to;
       }
-      
+
       console.log("Fetching billing revenue with params:", params);
-      
+
       const response = await http.get("/reports/billing-revenue", {
-        params
+        params,
       });
 
       if (response.data.success) {
@@ -178,7 +194,7 @@ export default function BillingRevenue() {
   const tableRows = useMemo(() => {
     if (!reportData?.customers) return [];
 
-    let rows = reportData.customers.map(customer => ({
+    let rows = reportData.customers.map((customer) => ({
       id: customer.client_id,
       customer: customer.client_name,
       eventsCount: customer.events_count || 0,
@@ -225,7 +241,7 @@ export default function BillingRevenue() {
         billableEvents: 0,
         blockedEvents: 0,
         invoicesRaised: 0,
-        avgBillingCycle: 0
+        avgBillingCycle: 0,
       };
     }
 
@@ -234,7 +250,7 @@ export default function BillingRevenue() {
       billableEvents: reportData.summary.billable_events || 0,
       blockedEvents: reportData.summary.blocked_events || 0,
       invoicesRaised: reportData.summary.invoices_raised || 0,
-      avgBillingCycle: reportData.summary.avg_billing_cycle || 0
+      avgBillingCycle: reportData.summary.avg_billing_cycle || 0,
     };
   }, [reportData]);
 
@@ -248,10 +264,10 @@ export default function BillingRevenue() {
         </button>
       ),
     },
-    { 
-      key: "eventsCount", 
+    {
+      key: "eventsCount",
       title: "Events Count",
-      render: (row) => <span className="font-medium">{row.eventsCount}</span>
+      render: (row) => <span className="font-medium">{row.eventsCount}</span>,
     },
     {
       key: "blocked",
@@ -263,20 +279,20 @@ export default function BillingRevenue() {
         return <NumPill value={n} tone="orange" />;
       },
     },
-    { 
-      key: "invoices", 
+    {
+      key: "invoices",
       title: "Invoices",
-      render: (row) => <span className="font-medium">{row.invoices}</span>
+      render: (row) => <span className="font-medium">{row.invoices}</span>,
     },
-    { 
-      key: "totalBilled", 
+    {
+      key: "totalBilled",
       title: "Total Billed",
-      render: (row) => <span className="font-medium">{row.totalBilled}</span>
+      render: (row) => <span className="font-medium">{row.totalBilled}</span>,
     },
-    { 
-      key: "outstanding", 
+    {
+      key: "outstanding",
       title: "Outstanding",
-      render: (row) => <span className="font-medium">{row.outstanding}</span>
+      render: (row) => <span className="font-medium">{row.outstanding}</span>,
     },
     {
       key: "overdue",
@@ -284,8 +300,7 @@ export default function BillingRevenue() {
       render: (row) => {
         const n = Number(row.overdue || 0);
         if (n === 0) return <NumPill value="₹0" tone="green" />;
-        if (n >= 20000)
-          return <NumPill value={formatCurrency(n)} tone="red" />;
+        if (n >= 20000) return <NumPill value={formatCurrency(n)} tone="red" />;
         return <NumPill value={formatCurrency(n)} tone="orange" />;
       },
     },
@@ -293,7 +308,7 @@ export default function BillingRevenue() {
     //   key: "action",
     //   title: "Action",
     //   render: (row) => (
-    //     <button 
+    //     <button
     //       onClick={() => console.log("View details for:", row.customer)}
     //       className="rounded-md border border-gray-200 bg-gray-50 px-3 py-1 text-xs font-medium text-gray-800 hover:bg-gray-100 transition-colors"
     //     >
@@ -350,7 +365,13 @@ export default function BillingRevenue() {
                 key: "dateRange",
                 label: "Date Range",
                 value: dateRange,
-                options: ["All", "Today", "This Week", "This Month", "Last Month"],
+                options: [
+                  "All",
+                  "Today",
+                  "This Week",
+                  "This Month",
+                  "Last Month",
+                ],
               },
               {
                 key: "client",
@@ -358,10 +379,10 @@ export default function BillingRevenue() {
                 value: client,
                 options: [
                   { label: "All Clients", value: "all" },
-                  ...clients.map(c => ({
+                  ...clients.map((c) => ({
                     label: c.client_name,
-                    value: c.id.toString()
-                  }))
+                    value: c.id.toString(),
+                  })),
                 ],
                 pagination: clientPagination,
                 onPageChange: (page) => {
@@ -433,8 +454,10 @@ export default function BillingRevenue() {
               {summary.blockedEvents}
             </p>
             <div className="mt-2">
-              <Badge 
-                text={summary.blockedEvents > 0 ? "Needs Attention" : "No blocks"} 
+              <Badge
+                text={
+                  summary.blockedEvents > 0 ? "Needs Attention" : "No blocks"
+                }
                 tone={summary.blockedEvents > 0 ? "red" : "green"}
               />
             </div>
@@ -457,8 +480,8 @@ export default function BillingRevenue() {
               {Math.abs(summary.avgBillingCycle)} Days
             </p>
             <div className="mt-2">
-              <Badge 
-                text={summary.avgBillingCycle < 0 ? "Faster" : "Slower"} 
+              <Badge
+                text={summary.avgBillingCycle < 0 ? "Faster" : "Slower"}
                 tone={summary.avgBillingCycle < 0 ? "green" : "orange"}
               />
             </div>
@@ -488,8 +511,10 @@ export default function BillingRevenue() {
               <CusTable columns={columns} data={tableRows} />
             ) : (
               <div className="text-center py-12">
-                <p className="text-gray-500">No customer data available for the selected filters</p>
-                <button 
+                <p className="text-gray-500">
+                  No customer data available for the selected filters
+                </p>
+                <button
                   onClick={handleReset}
                   className="mt-2 text-sm text-blue-600 hover:underline"
                 >

@@ -38,3 +38,41 @@ export const GROUP_PATHS = {
     "BILLING",
   ],
 };
+
+export const MODULE_CODES = [
+  "DASHBOARD",
+  "INBOUND",
+  "PUTAWAY",
+  "INVENTORY",
+  "OUTBOUND",
+  "PICKING",
+  "PACKING",
+  "SHIPPING",
+  "BILLING",
+  "ORDERS",
+  "GRN",
+  "PALLET",
+  "CARRIERS",
+  "CLIENTS",
+  "DOCKS",
+  "LOCATIONS",
+  "SKUS",
+  "SUPPLIERS",
+  "WAREHOUSE",
+  "SLOTTINGRULES",
+  "MASTERS",
+  "REPORTS",
+  "SETTINGS",
+  "MODULES",
+  "PERMISSIONS",
+  "ROLES",
+  "USER_MANAGEMENT",
+];
+
+export const PERMISSION_ACTIONS = [
+  "CREATE",
+  "READ",
+  "UPDATE",
+  "DELETE",
+  "EXPORT",
+];

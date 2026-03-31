@@ -7,6 +7,7 @@ import { Field, Modal } from "./helper";
 import { toast } from "react-hot-toast";
 import { useAccess } from "../../utils/useAccess";
 import { getUserRole } from "../../utils/authStorage";
+import { MODULE_CODES } from "../../routes/routePerms";
 
 const emptyModule = {
   name: "",
@@ -299,6 +300,13 @@ const ModulesTab = () => {
     [],
   );
 
+  const moduleOptions = useMemo(() => {
+    return MODULE_CODES.map((m) => ({
+      label: m,
+      value: m,
+    }));
+  }, []);
+
   return (
     <div>
       <div className="mb-4 flex items-center justify-end">
@@ -354,7 +362,7 @@ const ModulesTab = () => {
             </>
           }
         >
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 pb-32">
             <Field
               label="Name"
               required
@@ -365,8 +373,7 @@ const ModulesTab = () => {
                 setFormErrors((e) => ({ ...e, name: "" }));
               }}
             />
-
-            <Field
+            {/* <Field
               label="Code"
               required
               value={form.code}
@@ -376,8 +383,33 @@ const ModulesTab = () => {
                 setForm((p) => ({ ...p, code: next }));
                 setFormErrors((e) => ({ ...e, code: "" }));
               }}
-            />
+            /> */}
+            <div className="relative">
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Code *
+              </label>
 
+              <select
+                value={form.code || ""}
+                onChange={(e) => {
+                  setForm((p) => ({ ...p, code: e.target.value }));
+                  setFormErrors((err) => ({ ...err, code: "" }));
+                }}
+                className="w-full rounded-md border border-gray-300 px-3 py-2 text-sm"
+              >
+                <option value="">Select Module</option>
+
+                {MODULE_CODES.map((m) => (
+                  <option key={m} value={m}>
+                    {m}
+                  </option>
+                ))}
+              </select>
+
+              {formErrors.code && (
+                <p className="mt-1 text-xs text-red-500">{formErrors.code}</p>
+              )}
+            </div>
             <Field
               label="Display Order"
               required
@@ -389,14 +421,12 @@ const ModulesTab = () => {
                 setFormErrors((e) => ({ ...e, display_order: "" }));
               }}
             />
-
             <Field
               label="Icon"
               value={form.icon}
               error={formErrors.icon}
               onChange={(v) => setForm((p) => ({ ...p, icon: v }))}
             />
-
             <div className="md:col-span-2">
               <Field
                 label="Description"
@@ -405,7 +435,6 @@ const ModulesTab = () => {
                 onChange={(v) => setForm((p) => ({ ...p, description: v }))}
               />
             </div>
-
             {mode === "edit" && (
               <div className="md:col-span-2 flex items-center gap-3 pt-1">
                 <input

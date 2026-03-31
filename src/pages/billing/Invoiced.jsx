@@ -50,24 +50,35 @@ const Invoiced = ({ onOpenInvoice }) => {
 
   const getRangeFromPeriod = (period) => {
     const now = new Date();
-    const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-    const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
     const toYMD = (d) => d.toISOString().slice(0, 10);
 
-    if (period === "This Month")
-      return { date_from: toYMD(startOfMonth), date_to: toYMD(endOfMonth) };
+    const addOneDay = (d) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+
+    if (period === "This Month") {
+      const start = new Date(now.getFullYear(), now.getMonth(), 1);
+      return {
+        date_from: toYMD(start),
+        date_to: toYMD(addOneDay(now)),
+      };
+    }
 
     if (period === "Last Month") {
       const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const e = new Date(now.getFullYear(), now.getMonth(), 0);
-      return { date_from: toYMD(s), date_to: toYMD(e) };
+      return {
+        date_from: toYMD(s),
+        date_to: toYMD(addOneDay(e)),
+      };
     }
 
     if (period === "This Quarter") {
       const q = Math.floor(now.getMonth() / 3);
       const s = new Date(now.getFullYear(), q * 3, 1);
-      const e = new Date(now.getFullYear(), q * 3 + 3, 0);
-      return { date_from: toYMD(s), date_to: toYMD(e) };
+      return {
+        date_from: toYMD(s),
+        date_to: toYMD(addOneDay(now)),
+      };
     }
 
     return { date_from: "", date_to: "" };
@@ -95,21 +106,34 @@ const Invoiced = ({ onOpenInvoice }) => {
     qs.set("page", String(page));
     qs.set("limit", String(filters.limit));
 
+    const addOneDayStr = (ymd) => {
+      if (!ymd) return "";
+      const d = new Date(ymd);
+      const next = new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
+      return next.toISOString().slice(0, 10);
+    };
+
     const range =
       filters.period === "Custom Range"
-        ? { date_from: filters.date_from, date_to: filters.date_to }
+        ? {
+            date_from: filters.date_from,
+            date_to: addOneDayStr(filters.date_to),
+          }
         : getRangeFromPeriod(filters.period);
 
     if (filters.client_id) qs.set("client_id", filters.client_id);
     if (filters.warehouse_id) qs.set("warehouse_id", filters.warehouse_id);
 
-    if (filters.status && filters.status !== "All")
+    if (filters.status && filters.status !== "All") {
       qs.set("status", filters.status);
+    }
 
     if (range.date_from) qs.set("date_from", range.date_from);
     if (range.date_to) qs.set("date_to", range.date_to);
 
-    if (filters.search?.trim()) qs.set("search", filters.search.trim());
+    if (filters.search?.trim()) {
+      qs.set("search", filters.search.trim());
+    }
 
     return qs.toString();
   };

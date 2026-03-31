@@ -47,26 +47,39 @@ const BillableEvents = () => {
   });
 
   const getRangeFromPeriod = (period) => {
-    const now = new Date() + 24 * 60 * 60 * 1000;
+    const now = new Date();
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
     const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
     const toYMD = (d) => d.toISOString().slice(0, 10);
+    const addOneDay = (d) =>
+      new Date(d.getFullYear(), d.getMonth(), d.getDate() + 1);
 
     if (period === "This Month") {
-      return { date_from: toYMD(startOfMonth), date_to: toYMD(endOfMonth) };
+      return {
+        date_from: toYMD(startOfMonth),
+        date_to: toYMD(addOneDay(now)),
+      };
     }
+
     if (period === "Last Month") {
       const s = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const e = new Date(now.getFullYear(), now.getMonth(), 0);
-      return { date_from: toYMD(s), date_to: toYMD(e) };
+      return {
+        date_from: toYMD(s),
+        date_to: toYMD(addOneDay(e)),
+      };
     }
+
     if (period === "This Quarter") {
       const q = Math.floor(now.getMonth() / 3);
       const s = new Date(now.getFullYear(), q * 3, 1);
-      const e = new Date(now.getFullYear(), q * 3 + 3, 0);
-      return { date_from: toYMD(s), date_to: toYMD(e) };
+      return {
+        date_from: toYMD(s),
+        date_to: toYMD(addOneDay(now)),
+      };
     }
+
     return { date_from: "", date_to: "" };
   };
 
